@@ -1,0 +1,61 @@
+/* Styles specific to the Lessons section */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+}
+
+.lesson-item {
+    background: white;
+    margin: 1rem;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.question {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.answer {
+    color: #444;
+    margin-bottom: 0.5rem;
+}
+
+.audio-button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.audio-button:hover {
+    background-color: #1976D2;
+}
+
+.play-audio {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.back-button {
+    position: absolute;
+    left: 1rem;
+    color: white;
+    text-decoration: none;
+    font-size: 1.5rem;
+}

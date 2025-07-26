@@ -1,0 +1,87 @@
+/* Styles specific to the Quiz section */
+
+body {
+    background-color: #f9f9f9;
+    font-family: Arial, sans-serif;
+}
+
+.quiz-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+#question-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.question {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.answer-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#answer {
+    width: 100%;
+    padding: 1rem;
+    margin: 1rem 0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+}
+
+.submit-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background-color: #45a049;
+}
+
+.feedback {
+    margin-top: 15px;
+    font-size: 1em;
+    color: #d9534f; /* Bootstrap danger color */
+}
+
+#feedback {
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+}
+
+#feedback.correct {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+#feedback.incorrect {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.quiz-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hidden {
+    display: none;
+}

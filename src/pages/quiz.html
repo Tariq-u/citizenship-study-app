@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - U.S. Citizenship Test Study App</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/quiz.css">
+</head>
+<body>
+    <header>
+        <a href="../../index.html" class="back-button">←</a>
+        <h1>Quiz</h1>
+        <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="ps">پښتو (Pashto)</option>
+        </select>
+    </header>
+    <div class="quiz-container">
+        <div id="question-container">
+            <p id="question"></p>
+            <textarea id="answer" rows="3" placeholder="Type your answer here..."></textarea>
+            <button id="submitAnswer">Submit Answer</button>
+        </div>
+        <div id="feedback" class="hidden"></div>
+        <div class="quiz-controls">
+            <span id="score">Score: 0/0</span>
+            <button id="nextQuestion">Next Question →</button>
+        </div>
+    </div>
+    <script src="../js/utils.js"></script>
+    <script src="../js/quiz.js"></script>
+</body>
+</html>

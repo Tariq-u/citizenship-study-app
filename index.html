@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U.S. Citizenship Test Study App</title>
+    <link rel="manifest" href="src/manifest.json">
+    <link rel="stylesheet" href="src/css/style.css">
+    <meta name="theme-color" content="#1976d2">
+</head>
+<body>
+    <header>
+        <h1>U.S. Citizenship Test Study App</h1>
+        <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="ps">پښتو (Pashto)</option>
+        </select>
+    </header>
+    <nav>
+        <a href="src/pages/lessons.html" class="nav-item">
+            <span class="icon">📘</span> Lessons
+        </a>
+        <a href="src/pages/flashcards.html" class="nav-item">
+            <span class="icon">🃏</span> Flashcards
+        </a>
+        <a href="src/pages/quiz.html" class="nav-item">
+            <span class="icon">📝</span> Quiz
+        </a>
+    </nav>
+    <div class="status-container">
+        <div id="offlineIndicator" class="hidden">
+            <span class="icon">📱</span> Offline Mode
+        </div>
+        <div class="progress-section">
+            <h2>Your Progress</h2>
+            <div class="progress-stats">
+                <div class="stat-item">
+                    <span id="questionsStudied">0/100</span>
+                    <label>Questions Studied</label>
+                </div>
+                <div class="stat-item">
+                    <span id="quizScore">0%</span>
+                    <label>Quiz Score</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="src/js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('src/service-worker.js');
+        }
+    </script>
+</body>
+</html>
