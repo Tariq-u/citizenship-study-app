@@ -1,76 +1,133 @@
 import { citizenshipData } from '../data/citizenshipData.js';
 
-const sections = {
-    AMERICAN_GOVERNMENT: 'American Government',
-    AMERICAN_HISTORY: 'American History',
-    INTEGRATED_CIVICS: 'Integrated Civics'
-};
-
-// Translation object for UI elements
-const translations = {
-    en: {
-        'American Government': 'American Government',
-        'American History': 'American History',
-        'Integrated Civics': 'Integrated Civics',
-        'All Sections': 'All Sections',
-        'Search': 'Search questions...',
-        'Questions': 'Questions',
-        'Progress': 'Progress',
-        'Lessons': 'Lessons',
-        'Study Mode': 'Study Mode',
-        'Show Completed': 'Show Completed',
-        'Show Bookmarked': 'Show Bookmarked'
-    },
-    ps: {
-        'American Government': 'د امریکا حکومت',
-        'American History': 'د امریکا تاریخ',
-        'Integrated Civics': 'ګډ مدني زده کړې',
-        'All Sections': 'ټول برخې',
-        'Search': 'پوښتنې پلټئ...',
-        'Questions': 'پوښتنې',
-        'Progress': 'پرمختګ',
-        'Lessons': 'زده کړې',
-        'Study Mode': 'د زده کړې حالت',
-        'Show Completed': 'بشپړ شوي وښایاست',
-        'Show Bookmarked': 'نښه شوي وښایاست'
-    }
-};
-
+// Global state
 let audioPlayer = null;
 let bookmarkedQuestions = JSON.parse(localStorage.getItem('bookmarkedQuestions') || '[]');
 let completedQuestions = JSON.parse(localStorage.getItem('completedQuestions') || '[]');
-let currentFilter = 'all'; // 'all', 'completed', 'bookmarked', or section name
 let searchQuery = '';
 let studyMode = false;
+let currentTheme = localStorage.getItem('theme') || 'light';
+
+// Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing lessons...');
+    initializeLessons();
+});
+
+function initializeLessons() {
+    console.log('Initializing lessons with', citizenshipData.length, 'questions');
+    
+    // Apply theme
+    applyTheme(currentTheme);
+    
+    // Render the complete interface
+    renderLessonsInterface();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Show welcome message for first-time users
+    if (!localStorage.getItem('hasVisited')) {
+        setTimeout(showWelcomeMessage, 1000);
+        localStorage.setItem('hasVisited', 'true');
+    }
+}
+
+function renderLessonsInterface() {
+    const content = document.getElementById('lessonContent');
+    if (!content) {
+        console.error('lessonContent element not found');
+        return;
+    }
+    
+    content.innerHTML = '';
+    
+    // Add theme toggle to header if not exists
+    addThemeToggle();
+    
+    // Create and add control panel
+    const controlPanel = createControlPanel();
+    content.appendChild(controlPanel);
+    
+    // Create and add progress overview
+    const progressOverview = createProgressOverview();
+    content.appendChild(progressOverview);
+    
+    // Create and add questions grid
+    const questionsGrid = createQuestionsGrid();
+    content.appendChild(questionsGrid);
+    
+    // Add floating action button
+    const fab = createFloatingActionButton();
+    content.appendChild(fab);
+    
+    console.log('Interface rendered successfully');
+}
+
+function addThemeToggle() {
+    // Add theme toggle to header if it doesn't exist
+    const header = document.querySelector('header');
+    if (header && !header.querySelector('.theme-toggle')) {
+        const themeToggle = document.createElement('button');
+        themeToggle.className = 'theme-toggle';
+        themeToggle.onclick = toggleTheme;
+        themeToggle.innerHTML = currentTheme === 'dark' ? '☀️' : '🌙';
+        themeToggle.title = `Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`;
+        themeToggle.style.cssText = `
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        `;
+        header.appendChild(themeToggle);
+    }
+}
 
 function createControlPanel() {
     const panel = document.createElement('div');
     panel.className = 'control-panel';
+    
+    const sections = [...new Set(citizenshipData.map(q => q.section))];
+    
     panel.innerHTML = `
         <div class="search-section">
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search questions..." class="search-input">
-                <button class="search-btn" onclick="performSearch()">🔍</button>
+                <input type="text" id="searchInput" placeholder="🔍 Search questions and answers..." class="search-input">
+                <button class="search-btn" onclick="performSearch()">Search</button>
             </div>
         </div>
         <div class="filter-section">
             <div class="filter-group">
-                <label>Filter by Section:</label>
+                <label>📚 Filter by Section:</label>
                 <select id="sectionFilter" onchange="applyFilter()">
                     <option value="all">All Sections (${citizenshipData.length})</option>
-                    ${Object.values(sections).map(section => {
+                    ${sections.map(section => {
                         const count = citizenshipData.filter(q => q.section === section).length;
                         return `<option value="${section}">${section} (${count})</option>`;
                     }).join('')}
                 </select>
             </div>
             <div class="filter-group">
-                <label>Show:</label>
+                <label>📊 Show:</label>
                 <select id="statusFilter" onchange="applyFilter()">
                     <option value="all">All Questions</option>
                     <option value="completed">Completed (${completedQuestions.length})</option>
                     <option value="bookmarked">Bookmarked (${bookmarkedQuestions.length})</option>
-                    <option value="incomplete">Not Completed</option>
+                    <option value="incomplete">Not Completed (${citizenshipData.length - completedQuestions.length})</option>
                 </select>
             </div>
         </div>
@@ -79,13 +136,150 @@ function createControlPanel() {
                 📚 Study Mode: OFF
             </button>
             <button class="progress-btn" onclick="showProgress()">
-                📊 Progress
+                📊 Progress Details
+            </button>
+            <button class="theme-btn" onclick="toggleTheme()">
+                🌙 Toggle Theme
             </button>
         </div>
     `;
     return panel;
 }
 
+function createProgressOverview() {
+    const overview = document.createElement('div');
+    overview.className = 'progress-overview';
+    
+    const totalQuestions = citizenshipData.length;
+    const completedCount = completedQuestions.length;
+    const bookmarkedCount = bookmarkedQuestions.length;
+    const progressPercent = Math.round((completedCount / totalQuestions) * 100);
+    
+    overview.innerHTML = `
+        <div class="progress-stats">
+            <div class="stat-item">
+                <span class="stat-number">${completedCount}</span>
+                <span class="stat-label">Completed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">${bookmarkedCount}</span>
+                <span class="stat-label">Bookmarked</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">${totalQuestions}</span>
+                <span class="stat-label">Total Questions</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">${progressPercent}%</span>
+                <span class="stat-label">Progress</span>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress" style="width: ${progressPercent}%"></div>
+        </div>
+    `;
+    return overview;
+}
+
+function createQuestionsGrid() {
+    const grid = document.createElement('div');
+    grid.className = 'questions-grid';
+    grid.id = 'questionsGrid';
+    
+    const filteredQuestions = getFilteredQuestions();
+    
+    if (filteredQuestions.length === 0) {
+        grid.innerHTML = `
+            <div class="no-results">
+                <h3>No questions found</h3>
+                <p>Try adjusting your search or filter criteria.</p>
+            </div>
+        `;
+    } else {
+        filteredQuestions.forEach((q) => {
+            const card = createQuestionCard(q);
+            grid.appendChild(card);
+        });
+    }
+    
+    return grid;
+}
+
+function createFloatingActionButton() {
+    const fab = document.createElement('div');
+    fab.className = 'floating-action-btn';
+    fab.innerHTML = `
+        <button class="fab-btn" onclick="scrollToTop()" title="Scroll to Top">
+            ↑
+        </button>
+    `;
+    return fab;
+}
+
+function createQuestionCard(q) {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.dataset.questionId = q.id;
+    const isBookmarked = bookmarkedQuestions.includes(q.id);
+    const isCompleted = completedQuestions.includes(q.id);
+    
+    // Ensure we have the data we need
+    const questionEN = q.questionEN || 'Question not available';
+    const questionPS = q.questionPS || 'پوښتنه شتون نلري';
+    const answerEN = q.answerEN || 'Answer not available';
+    const answerPS = q.answerPS || 'ځواب شتون نلري';
+    
+    console.log('Creating card for question:', q.id, 'EN:', questionEN.substring(0, 50), 'PS:', questionPS.substring(0, 50));
+    
+    card.innerHTML = `
+        <div class="card-header">
+            <span class="question-number">#${q.id}</span>
+            <span class="section-tag">${q.section}</span>
+        </div>
+        <div class="question-section">
+            <div class="question-english">
+                <span class="language-label">🇺🇸 English:</span>
+                ${questionEN}
+            </div>
+            <div class="question-pashto" lang="ps" dir="rtl">
+                <span class="language-label">🇦🇫 پښتو:</span>
+                ${questionPS}
+            </div>
+        </div>
+        <div class="answer-section" ${studyMode ? 'style="display: none;"' : ''}>
+            <div class="answer-english">
+                <span class="language-label">✅ Answer:</span>
+                ${answerEN}
+            </div>
+            <div class="answer-pashto" lang="ps" dir="rtl">
+                <span class="language-label">✅ ځواب:</span>
+                ${answerPS}
+            </div>
+        </div>
+        <div class="card-footer">
+            <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN || ''}', this, 'en')" title="Play English Audio">
+                <span class="play-icon">▶</span>
+                <span class="loading-icon hidden">⌛</span>
+                <span class="audio-label">EN</span>
+            </button>
+            <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS || ''}', this, 'ps')" title="Play Pashto Audio">
+                <span class="play-icon">▶</span>
+                <span class="loading-icon hidden">⌛</span>
+                <span class="audio-label">PS</span>
+            </button>
+            <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})" title="Bookmark Question">
+                <span class="bookmark-icon">${isBookmarked ? '🔖' : '📑'}</span>
+            </button>
+            <button class="complete-btn ${isCompleted ? 'completed' : ''}" onclick="toggleComplete(${q.id})" title="Mark as Complete">
+                <span class="complete-icon">${isCompleted ? '✅' : '⭕'}</span>
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+// Audio handling functions
 function handleAudioPlay(audioSrc, button, language = 'en') {
     if (audioPlayer) {
         audioPlayer.pause();
@@ -94,39 +288,14 @@ function handleAudioPlay(audioSrc, button, language = 'en') {
     // Show loading state
     const playIcon = button.querySelector('.play-icon');
     const loadingIcon = button.querySelector('.loading-icon');
-    playIcon.classList.add('hidden');
-    loadingIcon.classList.remove('hidden');
+    if (playIcon && loadingIcon) {
+        playIcon.classList.add('hidden');
+        loadingIcon.classList.remove('hidden');
+    }
     button.disabled = true;
 
-    // Fix audio path - convert to correct path
-    const correctedAudioSrc = audioSrc.replace('/audio/', 'src/assets/audio/');
-
-    audioPlayer = new Audio(correctedAudioSrc);
-    audioPlayer.onended = () => {
-        // Reset button state
-        playIcon.classList.remove('hidden');
-        loadingIcon.classList.add('hidden');
-        button.disabled = false;
-    };
-    audioPlayer.onerror = () => {
-        // Reset button state on error
-        playIcon.classList.remove('hidden');
-        loadingIcon.classList.add('hidden');
-        button.disabled = false;
-
-        // Try text-to-speech as fallback
-        tryTextToSpeech(button, language);
-    };
-    audioPlayer.play().catch(error => {
-        console.error('Audio playback failed:', error);
-        // Reset button state
-        playIcon.classList.remove('hidden');
-        loadingIcon.classList.add('hidden');
-        button.disabled = false;
-
-        // Try text-to-speech as fallback
-        tryTextToSpeech(button, language);
-    });
+    // Try text-to-speech directly since audio files may not exist
+    tryTextToSpeech(button, language);
 }
 
 function tryTextToSpeech(button, language) {
@@ -135,177 +304,82 @@ function tryTextToSpeech(button, language) {
     let questionText, answerText;
 
     if (language === 'ps') {
-        questionText = card.querySelector('.question-pashto').textContent.replace('پښتو:', '').trim();
-        answerText = card.querySelector('.answer-pashto').textContent.replace('ځواب:', '').trim();
+        const questionEl = card.querySelector('.question-pashto');
+        const answerEl = card.querySelector('.answer-pashto');
+        questionText = questionEl ? questionEl.textContent.replace('🇦🇫 پښتو:', '').trim() : '';
+        answerText = answerEl ? answerEl.textContent.replace('✅ ځواب:', '').trim() : '';
     } else {
-        questionText = card.querySelector('.question-english').textContent.replace('English:', '').trim();
-        answerText = card.querySelector('.answer-english').textContent.replace('Answer:', '').trim();
+        const questionEl = card.querySelector('.question-english');
+        const answerEl = card.querySelector('.answer-english');
+        questionText = questionEl ? questionEl.textContent.replace('🇺🇸 English:', '').trim() : '';
+        answerText = answerEl ? answerEl.textContent.replace('✅ Answer:', '').trim() : '';
     }
 
     const fullText = questionText + '. ' + answerText;
 
     if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(fullText);
-
-        // Set language
         utterance.lang = language === 'ps' ? 'ps-AF' : 'en-US';
         utterance.rate = 0.8;
         utterance.pitch = 1;
 
         utterance.onend = () => {
-            const playIcon = button.querySelector('.play-icon');
-            const loadingIcon = button.querySelector('.loading-icon');
-            playIcon.classList.remove('hidden');
-            loadingIcon.classList.add('hidden');
-            button.disabled = false;
+            resetAudioButton(button);
         };
 
         speechSynthesis.speak(utterance);
     } else {
-        // Show user-friendly message
         const message = language === 'ps'
             ? 'د غږ فایل موندل نشو. د متن څخه غږ جوړول هم د دغه براوزر لخوا ملاتړ نشو.'
             : 'Audio file not found and text-to-speech is not supported in this browser.';
         alert(message);
+        resetAudioButton(button);
     }
 }
 
-function createQuestionCard(q, index) {
-    const card = document.createElement('div');
-    card.className = 'question-card';
-    card.dataset.questionId = q.id;
-    const isBookmarked = bookmarkedQuestions.includes(q.id);
-    const isCompleted = completedQuestions.includes(q.id);
-
-    // Add intersection observer for view tracking
-    if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    trackQuestionView(q.id);
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.5 });
-
-        observer.observe(card);
+function resetAudioButton(button) {
+    const playIcon = button.querySelector('.play-icon');
+    const loadingIcon = button.querySelector('.loading-icon');
+    if (playIcon && loadingIcon) {
+        playIcon.classList.remove('hidden');
+        loadingIcon.classList.add('hidden');
     }
-
-    card.innerHTML = `
-        <div class="card-header">
-            <span class="question-number">#${q.id}</span>
-            <span class="section-tag">${q.section}</span>
-        </div>
-        <div class="question-section">
-            <div class="question-english">
-                <span class="language-label">English:</span>
-                ${q.questionEN}
-            </div>
-            <div class="question-pashto" lang="ps">
-                <span class="language-label">پښتو:</span>
-                ${q.questionPS}
-            </div>
-        </div>
-        <div class="answer-section">
-            <div class="answer-english">
-                <span class="language-label">Answer:</span>
-                ${q.answerEN}
-            </div>
-            <div class="answer-pashto" lang="ps">
-                <span class="language-label">ځواب:</span>
-                ${q.answerPS}
-            </div>
-        </div>
-        <div class="card-footer">
-            <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN}', this, 'en')" title="Play English Audio">
-                <span class="play-icon">▶</span>
-                <span class="loading-icon hidden">⌛</span>
-                <span class="audio-label">EN</span>
-            </button>
-            <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS}', this, 'ps')" title="Play Pashto Audio">
-                <span class="play-icon">▶</span>
-                <span class="loading-icon hidden">⌛</span>
-                <span class="audio-label">PS</span>
-            </button>
-            <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})" title="Bookmark">
-                <span class="bookmark-icon">${isBookmarked ? '🔖' : '📑'}</span>
-            </button>
-            <button class="complete-btn ${isCompleted ? 'completed' : ''}" onclick="toggleComplete(${q.id})" title="Mark as Complete">
-                <span class="complete-icon">${isCompleted ? '✅' : '⭕'}</span>
-            </button>
-        </div>
-    `;
-    return card;
+    button.disabled = false;
 }
 
-function renderQuestions() {
-    const content = document.getElementById('lessonContent');
-    content.innerHTML = '';
-
-    // Add control panel
-    content.appendChild(createControlPanel());
-
-    // Add progress overview
-    const progressOverview = document.createElement('div');
-    progressOverview.className = 'progress-overview';
-    progressOverview.innerHTML = `
-        <div class="progress-stats">
-            <div class="stat-item">
-                <span class="stat-number">${completedQuestions.length}</span>
-                <span class="stat-label">Completed</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">${bookmarkedQuestions.length}</span>
-                <span class="stat-label">Bookmarked</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">${citizenshipData.length}</span>
-                <span class="stat-label">Total Questions</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">${Math.round((completedQuestions.length / citizenshipData.length) * 100)}%</span>
-                <span class="stat-label">Progress</span>
-            </div>
-        </div>
-        <div class="progress-bar">
-            <div class="progress" style="width: ${(completedQuestions.length / citizenshipData.length) * 100}%"></div>
-        </div>
-    `;
-    content.appendChild(progressOverview);
-
-    // Filter and display questions
-    const filteredQuestions = getFilteredQuestions();
-
-    const questionsGrid = document.createElement('div');
-    questionsGrid.className = 'questions-grid';
-    questionsGrid.id = 'questionsGrid';
-
-    if (filteredQuestions.length === 0) {
-        questionsGrid.innerHTML = `
-            <div class="no-results">
-                <h3>No questions found</h3>
-                <p>Try adjusting your search or filter criteria.</p>
-            </div>
-        `;
+// Bookmark and completion functions
+function toggleBookmark(questionId) {
+    const index = bookmarkedQuestions.indexOf(questionId);
+    if (index > -1) {
+        bookmarkedQuestions.splice(index, 1);
     } else {
-        filteredQuestions.forEach((q, index) => {
-            questionsGrid.appendChild(createQuestionCard(q, index));
-        });
+        bookmarkedQuestions.push(questionId);
     }
-
-    content.appendChild(questionsGrid);
-
-    // Add floating action button for quick actions
-    const fab = document.createElement('div');
-    fab.className = 'floating-action-btn';
-    fab.innerHTML = `
-        <button class="fab-btn" onclick="scrollToTop()" title="Scroll to Top">
-            ↑
-        </button>
-    `;
-    content.appendChild(fab);
+    localStorage.setItem('bookmarkedQuestions', JSON.stringify(bookmarkedQuestions));
+    renderLessonsInterface(); // Re-render to update UI
 }
 
+function toggleComplete(questionId) {
+    const index = completedQuestions.indexOf(questionId);
+    if (index > -1) {
+        completedQuestions.splice(index, 1);
+    } else {
+        completedQuestions.push(questionId);
+    }
+    localStorage.setItem('completedQuestions', JSON.stringify(completedQuestions));
+    renderLessonsInterface(); // Re-render to update UI
+    updateMainProgress(); // Update main app progress
+}
+
+function updateMainProgress() {
+    const progress = {
+        questionsStudied: completedQuestions.length,
+        quizScore: localStorage.getItem('quizScore') || 0
+    };
+    localStorage.setItem('citizenshipProgress', JSON.stringify(progress));
+}
+
+// Search and filter functions
 function getFilteredQuestions() {
     let filtered = [...citizenshipData];
 
@@ -348,13 +422,16 @@ function getFilteredQuestions() {
 function performSearch() {
     const searchInput = document.getElementById('searchInput');
     searchQuery = searchInput ? searchInput.value : '';
-    renderQuestions();
+    console.log('Performing search for:', searchQuery);
+    renderLessonsInterface();
 }
 
 function applyFilter() {
-    renderQuestions();
+    console.log('Applying filters');
+    renderLessonsInterface();
 }
 
+// Study mode functions
 function toggleStudyMode() {
     studyMode = !studyMode;
     const btn = document.getElementById('studyModeBtn');
@@ -363,53 +440,49 @@ function toggleStudyMode() {
         btn.classList.toggle('active', studyMode);
     }
 
-    // Apply study mode styling
-    document.body.classList.toggle('study-mode', studyMode);
-
-    if (studyMode) {
-        // Hide answers initially in study mode
-        document.querySelectorAll('.answer-section').forEach(section => {
-            section.style.display = 'none';
-        });
-
-        // Add reveal buttons
-        document.querySelectorAll('.question-card').forEach(card => {
-            if (!card.querySelector('.reveal-answer-btn')) {
-                const revealBtn = document.createElement('button');
-                revealBtn.className = 'reveal-answer-btn';
-                revealBtn.textContent = 'Show Answer';
-                revealBtn.onclick = () => {
-                    const answerSection = card.querySelector('.answer-section');
-                    answerSection.style.display = answerSection.style.display === 'none' ? 'block' : 'none';
-                    revealBtn.textContent = answerSection.style.display === 'none' ? 'Show Answer' : 'Hide Answer';
-                };
-                card.querySelector('.question-section').appendChild(revealBtn);
-            }
-        });
-    } else {
-        // Show all answers
-        document.querySelectorAll('.answer-section').forEach(section => {
-            section.style.display = 'block';
-        });
-
-        // Remove reveal buttons
-        document.querySelectorAll('.reveal-answer-btn').forEach(btn => btn.remove());
-    }
+    console.log('Study mode toggled:', studyMode);
+    renderLessonsInterface();
 }
 
+// Theme functions
+function toggleTheme() {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(currentTheme);
+    localStorage.setItem('theme', currentTheme);
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Update theme toggle buttons
+    const themeButtons = document.querySelectorAll('.theme-toggle, .theme-btn');
+    themeButtons.forEach(btn => {
+        if (btn.classList.contains('theme-toggle')) {
+            btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            btn.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
+        } else {
+            btn.textContent = `${theme === 'dark' ? '☀️' : '🌙'} Toggle Theme`;
+        }
+    });
+}
+
+// Progress and utility functions
 function showProgress() {
     const modal = document.createElement('div');
     modal.className = 'progress-modal';
+
+    const sections = [...new Set(citizenshipData.map(q => q.section))];
+
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📊 Study Progress</h2>
+                <h2>📊 Detailed Study Progress</h2>
                 <button class="close-btn" onclick="this.closest('.progress-modal').remove()">×</button>
             </div>
             <div class="modal-body">
                 <div class="progress-details">
                     <div class="section-progress">
-                        ${Object.values(sections).map(section => {
+                        ${sections.map(section => {
                             const sectionQuestions = citizenshipData.filter(q => q.section === section);
                             const sectionCompleted = sectionQuestions.filter(q => completedQuestions.includes(q.id));
                             const percentage = sectionQuestions.length > 0 ? Math.round((sectionCompleted.length / sectionQuestions.length) * 100) : 0;
@@ -435,100 +508,50 @@ function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Add missing functions
-function toggleBookmark(questionId) {
-    const index = bookmarkedQuestions.indexOf(questionId);
-    if (index > -1) {
-        bookmarkedQuestions.splice(index, 1);
-    } else {
-        bookmarkedQuestions.push(questionId);
-    }
-    localStorage.setItem('bookmarkedQuestions', JSON.stringify(bookmarkedQuestions));
-    renderQuestions(); // Re-render to update UI
-}
-
-function toggleComplete(questionId) {
-    const index = completedQuestions.indexOf(questionId);
-    if (index > -1) {
-        completedQuestions.splice(index, 1);
-    } else {
-        completedQuestions.push(questionId);
-    }
-    localStorage.setItem('completedQuestions', JSON.stringify(completedQuestions));
-    renderQuestions(); // Re-render to update UI
-    updateMainProgress(); // Update main app progress
-}
-
-function updateMainProgress() {
-    // Update the main app's progress tracking
-    const progress = {
-        questionsStudied: completedQuestions.length,
-        quizScore: localStorage.getItem('quizScore') || 0
-    };
-    localStorage.setItem('citizenshipProgress', JSON.stringify(progress));
-}
-
-// Make functions globally accessible
-window.handleAudioPlay = handleAudioPlay;
-window.toggleBookmark = toggleBookmark;
-window.toggleComplete = toggleComplete;
-window.performSearch = performSearch;
-window.applyFilter = applyFilter;
-window.toggleStudyMode = toggleStudyMode;
-window.showProgress = showProgress;
-window.scrollToTop = scrollToTop;
-
-// Add keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + F for search
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.focus();
+function setupEventListeners() {
+    // Search input with debouncing
+    let searchTimeout;
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'searchInput') {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch();
+            }, 300);
         }
-    }
+    });
 
-    // Ctrl/Cmd + S for study mode
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        toggleStudyMode();
-    }
-
-    // Escape to clear search
-    if (e.key === 'Escape') {
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput && searchInput.value) {
-            searchInput.value = '';
-            performSearch();
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + F for search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.focus();
+            }
         }
-    }
-});
 
-// Add search input event listener
-document.addEventListener('input', (e) => {
-    if (e.target.id === 'searchInput') {
-        // Debounce search
-        clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(() => {
-            performSearch();
-        }, 300);
-    }
-});
+        // Ctrl/Cmd + S for study mode
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            toggleStudyMode();
+        }
 
-// Initialize the app
-function initializeLessons() {
-    // Set document to support both LTR and RTL
-    document.documentElement.setAttribute('lang', 'en');
-    renderQuestions();
+        // Ctrl/Cmd + Shift + T for theme toggle
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') {
+            e.preventDefault();
+            toggleTheme();
+        }
 
-    // Add welcome message for first-time users
-    if (!localStorage.getItem('hasVisited')) {
-        setTimeout(() => {
-            showWelcomeMessage();
-            localStorage.setItem('hasVisited', 'true');
-        }, 1000);
-    }
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput && searchInput.value) {
+                searchInput.value = '';
+                performSearch();
+            }
+        }
+    });
 }
 
 function showWelcomeMessage() {
@@ -541,42 +564,27 @@ function showWelcomeMessage() {
             <ul>
                 <li>📚 <strong>Study Mode</strong> - Hide answers to test yourself (Ctrl+S)</li>
                 <li>🔍 <strong>Advanced Search</strong> - Find any topic instantly (Ctrl+F)</li>
-                <li>� <strong>Progress Tracking</strong> - See detailed study analytics</li>
-                <li>�📑 <strong>Smart Bookmarks</strong> - Save important questions</li>
+                <li>📊 <strong>Progress Tracking</strong> - See detailed study analytics</li>
+                <li>📑 <strong>Smart Bookmarks</strong> - Save important questions</li>
                 <li>🌙 <strong>Dark Mode</strong> - Toggle theme (Ctrl+Shift+T)</li>
                 <li>🔊 <strong>Dual Audio</strong> - EN/PS buttons for pronunciations</li>
                 <li>🌍 <strong>Dual Language</strong> - English & Pashto side-by-side</li>
             </ul>
             <div style="text-align: center; margin-top: 20px;">
                 <button onclick="this.closest('.welcome-message').remove()" style="margin-right: 10px;">Start Studying!</button>
-                <button onclick="window.open('demo-features.html', '_blank')" style="background: #10b981;">See All Features</button>
             </div>
         </div>
     `;
     document.body.appendChild(welcome);
 }
 
-// Add study session tracking
-let studySession = {
-    startTime: Date.now(),
-    questionsViewed: new Set(),
-    questionsCompleted: 0,
-    bookmarksAdded: 0
-};
-
-function trackQuestionView(questionId) {
-    studySession.questionsViewed.add(questionId);
-    updateStudyStats();
-}
-
-function updateStudyStats() {
-    // Update study session statistics
-    const sessionTime = Math.floor((Date.now() - studySession.startTime) / 1000 / 60); // minutes
-    localStorage.setItem('lastStudySession', JSON.stringify({
-        ...studySession,
-        sessionTime,
-        questionsViewed: Array.from(studySession.questionsViewed)
-    }));
-}
-
-initializeLessons();
+// Make functions globally accessible
+window.handleAudioPlay = handleAudioPlay;
+window.toggleBookmark = toggleBookmark;
+window.toggleComplete = toggleComplete;
+window.performSearch = performSearch;
+window.applyFilter = applyFilter;
+window.toggleStudyMode = toggleStudyMode;
+window.showProgress = showProgress;
+window.scrollToTop = scrollToTop;
+window.toggleTheme = toggleTheme;
