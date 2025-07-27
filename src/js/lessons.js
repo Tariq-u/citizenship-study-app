@@ -271,12 +271,12 @@ function createQuestionCard(q, index) {
             </div>
         </div>
         <div class="card-footer">
-            <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN || ''}', this, 'en')" title="Play English Audio">
+            <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN || ''}', this, 'en')" title="Play English Audio (Clean Text Only)">
                 <span class="play-icon">▶</span>
                 <span class="loading-icon hidden">⌛</span>
                 <span class="audio-label">EN</span>
             </button>
-            <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS || ''}', this, 'ps')" title="Play Pashto Audio">
+            <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS || ''}', this, 'ps')" title="Play Pashto Audio (Clean Text Only)">
                 <span class="play-icon">▶</span>
                 <span class="loading-icon hidden">⌛</span>
                 <span class="audio-label">PS</span>
@@ -463,6 +463,29 @@ function tryAudioFile(audioSrc, button, language) {
     }, 2000);
 }
 
+// Helper function to clean text content from labels and prefixes
+function cleanTextContent(text, prefixesToRemove) {
+    let cleanText = text;
+
+    // Remove all specified prefixes
+    prefixesToRemove.forEach(prefix => {
+        cleanText = cleanText.replace(prefix, '');
+    });
+
+    // Remove common artifacts and clean up
+    cleanText = cleanText
+        .replace(/^\s*[#]\d+\s*/, '') // Remove question numbers like "#1"
+        .replace(/^\s*Question\s*:?\s*/i, '') // Remove "Question:" prefix
+        .replace(/^\s*Answer\s*:?\s*/i, '') // Remove "Answer:" prefix
+        .replace(/^\s*پوښتنه\s*:?\s*/, '') // Remove Pashto "Question:" prefix
+        .replace(/^\s*ځواب\s*:?\s*/, '') // Remove Pashto "Answer:" prefix
+        .replace(/[🇺🇸🇦🇫✅📝🔊]/g, '') // Remove emoji flags and symbols
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim(); // Remove leading/trailing whitespace
+
+    return cleanText;
+}
+
 function tryTextToSpeech(button, language) {
     const card = button.closest('.question-card');
     let questionText, answerText;
@@ -470,23 +493,28 @@ function tryTextToSpeech(button, language) {
     if (language === 'ps') {
         const questionEl = card.querySelector('.question-pashto');
         const answerEl = card.querySelector('.answer-pashto');
-        questionText = questionEl ? questionEl.textContent.replace('🇦🇫 پښتو:', '').trim() : '';
-        answerText = answerEl ? answerEl.textContent.replace('✅ ځواب:', '').trim() : '';
+
+        // Get pure text content without any labels
+        questionText = questionEl ? cleanTextContent(questionEl.textContent, ['🇦🇫 پښتو:', 'پښتو:', 'پوښتنه:']) : '';
+        answerText = answerEl ? cleanTextContent(answerEl.textContent, ['✅ ځواب:', 'ځواب:', 'Answer:']) : '';
     } else {
         const questionEl = card.querySelector('.question-english');
         const answerEl = card.querySelector('.answer-english');
-        questionText = questionEl ? questionEl.textContent.replace('🇺🇸 English:', '').trim() : '';
-        answerText = answerEl ? answerEl.textContent.replace('✅ Answer:', '').trim() : '';
+
+        // Get pure text content without any labels
+        questionText = questionEl ? cleanTextContent(questionEl.textContent, ['🇺🇸 English:', 'English:', 'Question:']) : '';
+        answerText = answerEl ? cleanTextContent(answerEl.textContent, ['✅ Answer:', 'Answer:', 'ځواب:']) : '';
     }
 
-    const fullText = questionText + '. ' + answerText;
-    console.log('🔊 Text-to-speech:', fullText.substring(0, 50) + '...');
+    // Speak both question and answer with clean text only
+    const textToSpeak = questionText + '. ' + answerText;
+    console.log('🔊 Text-to-speech (clean):', textToSpeak.substring(0, 50) + '...');
 
     if ('speechSynthesis' in window) {
         // Stop any ongoing speech
         speechSynthesis.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(fullText);
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = language === 'ps' ? 'ps-AF' : 'en-US';
         utterance.rate = 0.8;
         utterance.pitch = 1;

@@ -132,6 +132,13 @@ h1 {
     border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.audio-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .audio-button {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
     color: white;
@@ -191,6 +198,23 @@ h1 {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Specific audio button styles */
+.audio-button.question-only {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.audio-button.answer-only {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.audio-button.question-only:hover {
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+}
+
+.audio-button.answer-only:hover {
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
 }
 
 .loading-icon {
