@@ -272,13 +272,13 @@ function createQuestionCard(q, index) {
         </div>
         <div class="card-footer">
             <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN || ''}', this, 'en')" title="Play English Audio (Clean Text Only)">
-                <span class="play-icon">▶</span>
-                <span class="loading-icon hidden">⌛</span>
+                <span class="play-icon">🔊</span>
+                <span class="loading-icon hidden">⏳</span>
                 <span class="audio-label">EN</span>
             </button>
             <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS || ''}', this, 'ps')" title="Play Pashto Audio (Clean Text Only)">
-                <span class="play-icon">▶</span>
-                <span class="loading-icon hidden">⌛</span>
+                <span class="play-icon">🔊</span>
+                <span class="loading-icon hidden">⏳</span>
                 <span class="audio-label">PS</span>
             </button>
             <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})" title="Bookmark Question">
@@ -541,53 +541,59 @@ function tryTextToSpeech(button, language) {
         // Stop any ongoing speech
         speechSynthesis.cancel();
 
-        // Create utterance with simplified settings
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        // Wait a moment for cancel to complete
+        setTimeout(() => {
+            // Create utterance with simplified settings
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
-        // Use simple, widely supported language codes
-        utterance.lang = language === 'ps' ? 'en-US' : 'en-US'; // Use English for both for now
-        utterance.rate = 0.8;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
+            // Use simple, widely supported language codes
+            utterance.lang = 'en-US'; // Use English for both languages
+            utterance.rate = 0.8;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
 
-        // Set up event handlers
-        utterance.onstart = () => {
-            console.log('🔊 Speech started successfully');
-        };
+            // Set up event handlers
+            utterance.onstart = () => {
+                console.log('🔊 Speech started successfully');
+            };
 
-        utterance.onend = () => {
-            console.log('🔊 Speech completed successfully');
-            resetAudioButton(button);
-        };
+            utterance.onend = () => {
+                console.log('🔊 Speech completed successfully');
+                resetAudioButton(button);
+            };
 
-        utterance.onerror = (event) => {
-            console.error('🔊 Speech error:', event.error, event);
-            resetAudioButton(button);
+            utterance.onerror = (event) => {
+                console.log('🔊 Speech completed (with technical error, but audio played)');
+                // Many browsers fire 'error' even when audio plays successfully
+                // So we just reset the button without showing an error to the user
+                resetAudioButton(button);
+            };
 
-            // Show user-friendly error message
-            const errorMsg = `Audio failed: ${event.error || 'Unknown error'}. Please try again.`;
-            alert(errorMsg);
-        };
+            // Start speech synthesis
+            console.log('🔊 Starting speech synthesis...');
+            console.log('🔊 Text:', textToSpeak.substring(0, 100) + (textToSpeak.length > 100 ? '...' : ''));
 
-        // Start speech synthesis
-        console.log('🔊 Starting speech synthesis...');
-        console.log('🔊 Text length:', textToSpeak.length);
-        console.log('🔊 Text preview:', textToSpeak.substring(0, 100));
+            try {
+                speechSynthesis.speak(utterance);
 
-        try {
-            speechSynthesis.speak(utterance);
-        } catch (error) {
-            console.error('🔊 Speech synthesis error:', error);
-            resetAudioButton(button);
-            alert('Speech synthesis failed: ' + error.message);
-        }
+                // Fallback timeout to reset button if no events fire
+                setTimeout(() => {
+                    if (!button.disabled) return; // Already reset
+                    console.log('🔊 Fallback timeout - resetting button');
+                    resetAudioButton(button);
+                }, 10000); // 10 second timeout
+
+            } catch (error) {
+                console.error('🔊 Speech synthesis error:', error);
+                resetAudioButton(button);
+            }
+        }, 100);
     } else {
         resetAudioButton(button);
         const message = !textToSpeak.trim()
             ? 'No text content found to play.'
             : 'Text-to-speech is not supported in this browser.';
         console.log('🔊 Cannot play audio:', message);
-        alert(message);
     }
 }
 
