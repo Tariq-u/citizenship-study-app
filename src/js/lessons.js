@@ -239,11 +239,11 @@ function createQuestionCard(q, index) {
     const isBookmarked = bookmarkedQuestions.includes(q.id);
     const isCompleted = completedQuestions.includes(q.id);
     
-    // Ensure we have the data
+    // Ensure we have the data and clean black squares
     const questionEN = q.questionEN || 'Question not available';
     const questionPS = q.questionPS || 'پوښتنه شتون نلري';
-    const answerEN = q.answerEN || 'Answer not available';
-    const answerPS = q.answerPS || 'ځواب شتون نلري';
+    const answerEN = (q.answerEN || 'Answer not available').replace(/▪/g, '•').replace(/■/g, '•').replace(/□/g, '•');
+    const answerPS = (q.answerPS || 'ځواب شتون نلري').replace(/▪/g, '•').replace(/■/g, '•').replace(/□/g, '•');
     
     card.innerHTML = `
         <div class="card-header">
@@ -484,6 +484,9 @@ function cleanTextContent(text, prefixesToRemove) {
         .replace(/^\s*پوښتنه\s*:?\s*/, '') // Remove Pashto "Question:" prefix
         .replace(/^\s*ځواب\s*:?\s*/, '') // Remove Pashto "Answer:" prefix
         .replace(/[🇺🇸🇦🇫✅📝🔊]/g, '') // Remove emoji flags and symbols
+        .replace(/▪/g, '•') // Replace black square bullets with regular bullets
+        .replace(/■/g, '•') // Replace black squares with regular bullets
+        .replace(/□/g, '•') // Replace white squares with regular bullets
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .trim(); // Remove leading/trailing whitespace
 
