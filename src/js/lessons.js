@@ -273,10 +273,12 @@ function createQuestionCard(q, index) {
         <div class="card-footer">
             <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN || ''}', this, 'en')" title="Play English Audio">
                 <span class="play-icon">▶</span>
+                <span class="loading-icon hidden">⌛</span>
                 <span class="audio-label">EN</span>
             </button>
             <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS || ''}', this, 'ps')" title="Play Pashto Audio">
                 <span class="play-icon">▶</span>
+                <span class="loading-icon hidden">⌛</span>
                 <span class="audio-label">PS</span>
             </button>
             <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})" title="Bookmark Question">
@@ -414,10 +416,54 @@ function toggleComplete(questionId) {
     localStorage.setItem('citizenshipProgress', JSON.stringify(progress));
 }
 
-// Audio function
+// Enhanced Audio function with fallback
 function handleAudioPlay(audioSrc, button, language = 'en') {
-    console.log('🔊 Playing audio for language:', language);
+    console.log('🔊 Playing audio for language:', language, 'Source:', audioSrc);
 
+    // Show loading state
+    const playIcon = button.querySelector('.play-icon');
+    const loadingIcon = button.querySelector('.loading-icon');
+    if (playIcon && loadingIcon) {
+        playIcon.classList.add('hidden');
+        loadingIcon.classList.remove('hidden');
+    }
+    button.disabled = true;
+
+    // Try to play audio file first, then fallback to text-to-speech
+    if (audioSrc && audioSrc.trim() !== '') {
+        tryAudioFile(audioSrc, button, language);
+    } else {
+        tryTextToSpeech(button, language);
+    }
+}
+
+function tryAudioFile(audioSrc, button, language) {
+    const audio = new Audio(audioSrc);
+
+    audio.onloadeddata = () => {
+        console.log('🔊 Audio file loaded successfully:', audioSrc);
+        audio.play();
+    };
+
+    audio.onended = () => {
+        resetAudioButton(button);
+    };
+
+    audio.onerror = (error) => {
+        console.log('🔊 Audio file failed, falling back to text-to-speech:', error);
+        tryTextToSpeech(button, language);
+    };
+
+    // Timeout fallback
+    setTimeout(() => {
+        if (audio.readyState === 0) {
+            console.log('🔊 Audio file timeout, falling back to text-to-speech');
+            tryTextToSpeech(button, language);
+        }
+    }, 2000);
+}
+
+function tryTextToSpeech(button, language) {
     const card = button.closest('.question-card');
     let questionText, answerText;
 
@@ -434,15 +480,49 @@ function handleAudioPlay(audioSrc, button, language = 'en') {
     }
 
     const fullText = questionText + '. ' + answerText;
+    console.log('🔊 Text-to-speech:', fullText.substring(0, 50) + '...');
 
     if ('speechSynthesis' in window) {
+        // Stop any ongoing speech
+        speechSynthesis.cancel();
+
         const utterance = new SpeechSynthesisUtterance(fullText);
         utterance.lang = language === 'ps' ? 'ps-AF' : 'en-US';
         utterance.rate = 0.8;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onend = () => {
+            resetAudioButton(button);
+        };
+
+        utterance.onerror = (error) => {
+            console.log('🔊 Text-to-speech error:', error);
+            resetAudioButton(button);
+            const message = language === 'ps'
+                ? 'د غږ فایل موندل نشو او د متن څخه غږ جوړول هم ناکام شو.'
+                : 'Audio file not found and text-to-speech failed.';
+            alert(message);
+        };
+
         speechSynthesis.speak(utterance);
     } else {
-        alert('Text-to-speech not supported in this browser.');
+        resetAudioButton(button);
+        const message = language === 'ps'
+            ? 'د غږ فایل موندل نشو. د متن څخه غږ جوړول هم د دغه براوزر لخوا ملاتړ نشو.'
+            : 'Audio file not found and text-to-speech is not supported in this browser.';
+        alert(message);
     }
+}
+
+function resetAudioButton(button) {
+    const playIcon = button.querySelector('.play-icon');
+    const loadingIcon = button.querySelector('.loading-icon');
+    if (playIcon && loadingIcon) {
+        playIcon.classList.remove('hidden');
+        loadingIcon.classList.add('hidden');
+    }
+    button.disabled = false;
 }
 
 // Progress modal

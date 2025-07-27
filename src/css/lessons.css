@@ -193,6 +193,19 @@ h1 {
     transform: none;
 }
 
+.loading-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none !important;
+}
+
 .bookmark-btn, .complete-btn {
     background: rgba(255, 255, 255, 0.8);
     border: 2px solid var(--border-color);

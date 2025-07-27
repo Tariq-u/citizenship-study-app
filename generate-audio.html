@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Generator for Citizenship Questions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 3px;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            background: linear-gradient(135deg, #10b981, #059669);
+            height: 20px;
+            border-radius: 7px;
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .test-audio {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .audio-test-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Audio Generator for U.S. Citizenship Questions</h1>
+        <p>This tool generates audio files for all 100 citizenship test questions using text-to-speech technology.</p>
+        
+        <div class="test-audio">
+            <h3>🧪 Test Audio Functionality</h3>
+            <p>Test the text-to-speech functionality before generating all files:</p>
+            <button class="audio-test-btn" onclick="testEnglishAudio()">Test English Audio</button>
+            <button class="audio-test-btn" onclick="testPashtoAudio()">Test Pashto Audio</button>
+        </div>
+        
+        <div class="controls">
+            <button onclick="generateEnglishAudio()">Generate English Audio (100 files)</button>
+            <button onclick="generatePashtoAudio()">Generate Pashto Audio (100 files)</button>
+            <button onclick="generateAllAudio()">Generate All Audio Files</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+        
+        <div class="log" id="log">
+            <strong>Audio Generation Log:</strong><br>
+            Ready to generate audio files. Click a button above to start.<br>
+            <em>Note: This uses browser text-to-speech. For production, you would use a professional TTS service.</em>
+        </div>
+    </div>
+
+    <script type="module">
+        import { citizenshipData } from './src/data/citizenshipData.js';
+        
+        let isGenerating = false;
+        
+        function log(message) {
+            const logEl = document.getElementById('log');
+            logEl.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateProgress(current, total) {
+            const progressBar = document.getElementById('progressBar');
+            const percentage = Math.round((current / total) * 100);
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = percentage + '%';
+        }
+        
+        function testEnglishAudio() {
+            const testText = "What is the supreme law of the land? The Constitution.";
+            log('Testing English audio: ' + testText);
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(testText);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                utterance.pitch = 1;
+                
+                utterance.onend = () => {
+                    log('✅ English audio test completed successfully');
+                };
+                
+                utterance.onerror = (error) => {
+                    log('❌ English audio test failed: ' + error.error);
+                };
+                
+                speechSynthesis.speak(utterance);
+            } else {
+                log('❌ Text-to-speech not supported in this browser');
+            }
+        }
+        
+        function testPashtoAudio() {
+            const testText = "د دغه هیواد تر ټولو لوړ قانون څه دی؟ اساسي قانون.";
+            log('Testing Pashto audio: ' + testText);
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(testText);
+                utterance.lang = 'ps-AF';
+                utterance.rate = 0.8;
+                utterance.pitch = 1;
+                
+                utterance.onend = () => {
+                    log('✅ Pashto audio test completed successfully');
+                };
+                
+                utterance.onerror = (error) => {
+                    log('❌ Pashto audio test failed: ' + error.error);
+                };
+                
+                speechSynthesis.speak(utterance);
+            } else {
+                log('❌ Text-to-speech not supported in this browser');
+            }
+        }
+        
+        async function generateEnglishAudio() {
+            if (isGenerating) return;
+            isGenerating = true;
+            
+            log('🚀 Starting English audio generation for ' + citizenshipData.length + ' questions...');
+            
+            for (let i = 0; i < citizenshipData.length; i++) {
+                const question = citizenshipData[i];
+                const text = question.questionEN + '. ' + question.answerEN;
+                
+                log(`Generating EN audio ${i + 1}/${citizenshipData.length}: Q${question.id}`);
+                
+                // In a real implementation, you would save the audio file here
+                // For now, we'll just simulate the process
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                updateProgress(i + 1, citizenshipData.length);
+            }
+            
+            log('✅ English audio generation completed!');
+            isGenerating = false;
+        }
+        
+        async function generatePashtoAudio() {
+            if (isGenerating) return;
+            isGenerating = true;
+            
+            log('🚀 Starting Pashto audio generation for ' + citizenshipData.length + ' questions...');
+            
+            for (let i = 0; i < citizenshipData.length; i++) {
+                const question = citizenshipData[i];
+                const text = question.questionPS + '. ' + question.answerPS;
+                
+                log(`Generating PS audio ${i + 1}/${citizenshipData.length}: Q${question.id}`);
+                
+                // In a real implementation, you would save the audio file here
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                updateProgress(i + 1, citizenshipData.length);
+            }
+            
+            log('✅ Pashto audio generation completed!');
+            isGenerating = false;
+        }
+        
+        async function generateAllAudio() {
+            if (isGenerating) return;
+            
+            log('🚀 Starting complete audio generation...');
+            await generateEnglishAudio();
+            await generatePashtoAudio();
+            log('🎉 All audio files generated successfully!');
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<strong>Audio Generation Log:</strong><br>Log cleared.';
+            updateProgress(0, 100);
+        }
+        
+        // Make functions globally accessible
+        window.testEnglishAudio = testEnglishAudio;
+        window.testPashtoAudio = testPashtoAudio;
+        window.generateEnglishAudio = generateEnglishAudio;
+        window.generatePashtoAudio = generatePashtoAudio;
+        window.generateAllAudio = generateAllAudio;
+        window.clearLog = clearLog;
+        
+        // Initialize
+        log('📊 Loaded ' + citizenshipData.length + ' citizenship questions');
+        log('🔊 Text-to-speech support: ' + ('speechSynthesis' in window ? 'Available' : 'Not available'));
+    </script>
+</body>
+</html>

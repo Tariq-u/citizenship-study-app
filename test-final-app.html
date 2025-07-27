@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Test - All 100 Questions with Audio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/css/style.css">
+    <link rel="stylesheet" href="src/css/lessons.css">
+    <style>
+        .final-test-banner {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 1rem;
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            min-width: 400px;
+            backdrop-filter: blur(10px);
+        }
+        .final-test-banner h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.2rem;
+        }
+        .banner-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .banner-stat {
+            text-align: center;
+        }
+        .banner-stat .number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .banner-stat .label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        body {
+            padding-top: 140px;
+        }
+        .test-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+        .audio-test-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+    </style>
+</head>
+<body>
+    <div class="final-test-banner">
+        <h2>🎉 FINAL TEST: Complete U.S. Citizenship Study App</h2>
+        <div class="banner-stats">
+            <div class="banner-stat">
+                <span class="number" id="totalQuestions">100</span>
+                <span class="label">Total Questions</span>
+            </div>
+            <div class="banner-stat">
+                <span class="number" id="displayedQuestions">0</span>
+                <span class="label">Displayed</span>
+            </div>
+            <div class="banner-stat">
+                <span class="number" id="audioButtons">0</span>
+                <span class="label">Audio Buttons</span>
+            </div>
+            <div class="banner-stat">
+                <span class="number" id="pashtoText">0</span>
+                <span class="label">Pashto Texts</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-controls">
+        <button class="test-btn" onclick="runFullTest()">🔍 Run Full Test</button>
+        <button class="test-btn audio-test-btn" onclick="testRandomAudio()">🔊 Test Audio</button>
+        <button class="test-btn" onclick="scrollToQuestion(50)">Go to Q50</button>
+        <button class="test-btn" onclick="scrollToQuestion(100)">Go to Q100</button>
+    </div>
+    
+    <header>
+        <a href="index.html" class="back-button">←</a>
+        <h1 id="lessonsTitle">🇺🇸 FINAL TEST: Complete Citizenship Study App</h1>
+        <p class="subtitle">All 100 Official USCIS Questions - English & Pashto (انګلیسي او پښتو)</p>
+    </header>
+    
+    <main id="lessonContent">
+        <div class="loading-message" style="text-align: center; padding: 2rem; color: white;">
+            <h2>Loading complete citizenship test...</h2>
+            <p>Please wait while we load all 100 official USCIS questions with English and Pashto translations.</p>
+        </div>
+    </main>
+    
+    <script type="module" src="src/js/lessons.js"></script>
+    
+    <script>
+        let testResults = {
+            totalQuestions: 0,
+            displayedQuestions: 0,
+            audioButtons: 0,
+            pashtoTexts: 0,
+            englishTexts: 0,
+            sections: new Set(),
+            questionIds: []
+        };
+        
+        function updateBannerStats() {
+            // Count displayed questions
+            const questionCards = document.querySelectorAll('.question-card');
+            testResults.displayedQuestions = questionCards.length;
+            
+            // Count audio buttons
+            testResults.audioButtons = document.querySelectorAll('.audio-button').length;
+            
+            // Count Pashto texts
+            testResults.pashtoTexts = document.querySelectorAll('[lang="ps"]').length;
+            
+            // Count English texts
+            testResults.englishTexts = document.querySelectorAll('.question-english, .answer-english').length;
+            
+            // Get question IDs
+            testResults.questionIds = Array.from(questionCards).map(card => 
+                parseInt(card.dataset.questionId)
+            ).sort((a, b) => a - b);
+            
+            // Get sections
+            testResults.sections = new Set(Array.from(questionCards).map(card => 
+                card.querySelector('.section-tag')?.textContent || 'Unknown'
+            ));
+            
+            // Update banner
+            document.getElementById('displayedQuestions').textContent = testResults.displayedQuestions;
+            document.getElementById('audioButtons').textContent = testResults.audioButtons;
+            document.getElementById('pashtoText').textContent = testResults.pashtoTexts;
+            
+            // Update banner color based on success
+            const banner = document.querySelector('.final-test-banner');
+            if (testResults.displayedQuestions >= 100) {
+                banner.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+            } else if (testResults.displayedQuestions > 50) {
+                banner.style.background = 'linear-gradient(135deg, #FF9800, #F57C00)';
+            } else {
+                banner.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+            }
+        }
+        
+        function runFullTest() {
+            console.log('🔍 Running comprehensive test...');
+            
+            updateBannerStats();
+            
+            console.log('📊 Test Results:');
+            console.log('- Total questions displayed:', testResults.displayedQuestions);
+            console.log('- Audio buttons:', testResults.audioButtons);
+            console.log('- Pashto texts:', testResults.pashtoTexts);
+            console.log('- English texts:', testResults.englishTexts);
+            console.log('- Sections found:', Array.from(testResults.sections));
+            console.log('- Question ID range:', testResults.questionIds.length > 0 ? 
+                `${testResults.questionIds[0]} to ${testResults.questionIds[testResults.questionIds.length - 1]}` : 'None');
+            
+            // Check for missing questions
+            const expectedIds = Array.from({length: 100}, (_, i) => i + 1);
+            const missingIds = expectedIds.filter(id => !testResults.questionIds.includes(id));
+            
+            if (missingIds.length === 0) {
+                console.log('✅ SUCCESS: All 100 questions are present!');
+                alert('✅ SUCCESS: All 100 questions are displayed correctly with English and Pashto translations!');
+            } else {
+                console.log('❌ MISSING QUESTIONS:', missingIds);
+                alert(`❌ ISSUE: ${missingIds.length} questions are missing: ${missingIds.slice(0, 10).join(', ')}${missingIds.length > 10 ? '...' : ''}`);
+            }
+            
+            // Test audio functionality
+            const audioButtons = document.querySelectorAll('.audio-button');
+            console.log('🔊 Audio buttons found:', audioButtons.length);
+            console.log('🔊 Expected audio buttons:', testResults.displayedQuestions * 2, '(2 per question)');
+        }
+        
+        function testRandomAudio() {
+            const audioButtons = document.querySelectorAll('.audio-button');
+            if (audioButtons.length === 0) {
+                alert('No audio buttons found!');
+                return;
+            }
+            
+            // Test a random English button
+            const englishButtons = document.querySelectorAll('.english-audio');
+            if (englishButtons.length > 0) {
+                const randomEnglish = englishButtons[Math.floor(Math.random() * englishButtons.length)];
+                console.log('🔊 Testing random English audio button...');
+                randomEnglish.click();
+            }
+            
+            // Test a random Pashto button after 3 seconds
+            setTimeout(() => {
+                const pashtoButtons = document.querySelectorAll('.pashto-audio');
+                if (pashtoButtons.length > 0) {
+                    const randomPashto = pashtoButtons[Math.floor(Math.random() * pashtoButtons.length)];
+                    console.log('🔊 Testing random Pashto audio button...');
+                    randomPashto.click();
+                }
+            }, 3000);
+        }
+        
+        function scrollToQuestion(questionNumber) {
+            const questionCard = document.querySelector(`[data-question-id="${questionNumber}"]`);
+            if (questionCard) {
+                questionCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                questionCard.style.border = '3px solid #4CAF50';
+                setTimeout(() => {
+                    questionCard.style.border = '';
+                }, 2000);
+            } else {
+                alert(`Question ${questionNumber} not found!`);
+            }
+        }
+        
+        // Auto-update stats every 2 seconds
+        setInterval(updateBannerStats, 2000);
+        
+        // Initial update after 3 seconds
+        setTimeout(() => {
+            updateBannerStats();
+            runFullTest();
+        }, 3000);
+        
+        // Make functions globally accessible
+        window.runFullTest = runFullTest;
+        window.testRandomAudio = testRandomAudio;
+        window.scrollToQuestion = scrollToQuestion;
+    </script>
+</body>
+</html>
