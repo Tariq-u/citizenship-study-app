@@ -524,68 +524,69 @@ function tryTextToSpeech(button, language) {
     console.log('🔊 Cleaned question:', questionText);
     console.log('🔊 Cleaned answer:', answerText);
 
+    // Check if we have valid text
+    if (!questionText && !answerText) {
+        console.error('🔊 No text found to speak');
+        resetAudioButton(button);
+        alert('No text content found to play.');
+        return;
+    }
+
     // Speak both question and answer with clean text only
-    const textToSpeak = questionText + '. ' + answerText;
+    const textToSpeak = (questionText + '. ' + answerText).replace(/^\.\s*/, '').trim();
     console.log('🔊 Final text to speak:', textToSpeak);
+    console.log('🔊 Text length:', textToSpeak.length);
 
     if ('speechSynthesis' in window && textToSpeak.trim() !== '') {
         // Stop any ongoing speech
         speechSynthesis.cancel();
 
-        // Wait a moment for speechSynthesis to be ready
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        // Create utterance with simplified settings
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
-            // Use more compatible language codes
-            if (language === 'ps') {
-                // Try different Pashto/Urdu language codes
-                utterance.lang = 'ur-PK'; // Urdu as fallback for Pashto
-            } else {
-                utterance.lang = 'en-US';
-            }
+        // Use simple, widely supported language codes
+        utterance.lang = language === 'ps' ? 'en-US' : 'en-US'; // Use English for both for now
+        utterance.rate = 0.8;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
 
-            utterance.rate = 0.8;
-            utterance.pitch = 1;
-            utterance.volume = 1;
+        // Set up event handlers
+        utterance.onstart = () => {
+            console.log('🔊 Speech started successfully');
+        };
 
-            utterance.onstart = () => {
-                console.log('🔊 Text-to-speech started successfully');
-            };
+        utterance.onend = () => {
+            console.log('🔊 Speech completed successfully');
+            resetAudioButton(button);
+        };
 
-            utterance.onend = () => {
-                console.log('🔊 Text-to-speech completed');
-                resetAudioButton(button);
-            };
+        utterance.onerror = (event) => {
+            console.error('🔊 Speech error:', event.error, event);
+            resetAudioButton(button);
 
-            utterance.onerror = (error) => {
-                console.log('🔊 Text-to-speech error:', error);
-                resetAudioButton(button);
+            // Show user-friendly error message
+            const errorMsg = `Audio failed: ${event.error || 'Unknown error'}. Please try again.`;
+            alert(errorMsg);
+        };
 
-                // Try with default language as fallback
-                if (language === 'ps') {
-                    console.log('🔊 Retrying Pashto text with English voice...');
-                    const fallbackUtterance = new SpeechSynthesisUtterance(textToSpeak);
-                    fallbackUtterance.lang = 'en-US';
-                    fallbackUtterance.rate = 0.7;
-                    fallbackUtterance.onend = () => resetAudioButton(button);
-                    fallbackUtterance.onerror = () => {
-                        resetAudioButton(button);
-                        alert('Audio playback failed. Please try again.');
-                    };
-                    speechSynthesis.speak(fallbackUtterance);
-                } else {
-                    alert('Audio playback failed. Please try again.');
-                }
-            };
+        // Start speech synthesis
+        console.log('🔊 Starting speech synthesis...');
+        console.log('🔊 Text length:', textToSpeak.length);
+        console.log('🔊 Text preview:', textToSpeak.substring(0, 100));
 
-            console.log('🔊 Starting text-to-speech with text:', textToSpeak.substring(0, 50) + '...');
+        try {
             speechSynthesis.speak(utterance);
-        }, 100);
+        } catch (error) {
+            console.error('🔊 Speech synthesis error:', error);
+            resetAudioButton(button);
+            alert('Speech synthesis failed: ' + error.message);
+        }
     } else {
         resetAudioButton(button);
         const message = !textToSpeak.trim()
             ? 'No text content found to play.'
             : 'Text-to-speech is not supported in this browser.';
+        console.log('🔊 Cannot play audio:', message);
         alert(message);
     }
 }
@@ -690,28 +691,33 @@ function testAudio() {
     if ('speechSynthesis' in window) {
         speechSynthesis.cancel();
 
-        const testText = "Audio system is working correctly. This is a test message.";
+        const testText = "Hello, this is a test of the audio system.";
         const utterance = new SpeechSynthesisUtterance(testText);
         utterance.lang = 'en-US';
         utterance.rate = 0.8;
-        utterance.pitch = 1;
-        utterance.volume = 1;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
 
         utterance.onstart = () => {
-            console.log('🔊 Test audio started');
+            console.log('🔊 Test audio started successfully');
         };
 
         utterance.onend = () => {
-            console.log('🔊 Test audio completed');
-            alert('Audio test completed successfully!');
+            console.log('🔊 Test audio completed successfully');
         };
 
-        utterance.onerror = (error) => {
-            console.log('🔊 Test audio error:', error);
-            alert('Audio test failed: ' + error.error);
+        utterance.onerror = (event) => {
+            console.error('🔊 Test audio error:', event.error, event);
+            alert('Audio test failed: ' + (event.error || 'Unknown error'));
         };
 
-        speechSynthesis.speak(utterance);
+        try {
+            speechSynthesis.speak(utterance);
+            console.log('🔊 Test speech synthesis started');
+        } catch (error) {
+            console.error('🔊 Test speech synthesis failed:', error);
+            alert('Speech synthesis failed: ' + error.message);
+        }
     } else {
         alert('Speech synthesis is not supported in this browser.');
     }
