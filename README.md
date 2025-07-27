@@ -26,9 +26,33 @@ A beautiful, comprehensive study application for the U.S. Citizenship Test, feat
 ### 🔧 **Advanced Functionality**
 - **Bookmark System**: Save important questions for later review
 - **Completion Tracking**: Mark questions as studied
-- **Audio Support**: Listen to questions and answers (when audio files are available)
+- **Smart Audio Support**:
+  - Plays audio files when available
+  - Falls back to text-to-speech when audio files are missing
+  - Supports both English and Pashto pronunciation
 - **Offline Support**: Works without internet connection (PWA ready)
 - **Local Storage**: Persistent progress and preferences
+
+## 🎯 **Pashto Translation & Audio Status**
+
+### ✅ **What's Working:**
+- **Complete Pashto Translations**: All 100+ questions and answers are fully translated
+- **UI Translation**: All interface elements have Pashto translations
+- **RTL Support**: Proper right-to-left text direction for Pashto
+- **Beautiful Typography**: Noto Naskh Arabic font for authentic Pashto display
+- **Text-to-Speech Fallback**: When audio files aren't available, the app uses browser TTS
+
+### 🔧 **Audio System:**
+- **Primary**: Looks for MP3 files in `src/assets/audio/en/` and `src/assets/audio/ps/`
+- **Fallback**: Uses browser's built-in text-to-speech when audio files are missing
+- **Smart Detection**: Automatically switches between audio file and TTS
+- **Language Support**: Handles both English (en-US) and Pashto (ps-AF) pronunciation
+
+### 📁 **To Add Your Own Audio Files:**
+1. Create MP3 files named `q1.mp3`, `q2.mp3`, etc.
+2. Place English audio in: `src/assets/audio/en/`
+3. Place Pashto audio in: `src/assets/audio/ps/`
+4. The app will automatically use them instead of text-to-speech
 
 ## File Structure
 

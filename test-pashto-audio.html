@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pashto & Audio Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            margin: 20px 0;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .pashto-text {
+            font-family: 'Noto Naskh Arabic', serif;
+            direction: rtl;
+            text-align: right;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #1e293b;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(37, 99, 235, 0.05);
+            border-radius: 10px;
+            border-right: 4px solid #2563eb;
+        }
+        
+        .english-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #1e293b;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+        
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        h1, h2 {
+            color: #1e293b;
+            text-align: center;
+        }
+        
+        .language-toggle {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            font-size: 1rem;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🇺🇸 Pashto Translation & Audio Test</h1>
+    
+    <div class="language-toggle">
+        <label for="languageSelect">Select Language: </label>
+        <select id="languageSelect">
+            <option value="en">English</option>
+            <option value="ps">پښتو (Pashto)</option>
+        </select>
+    </div>
+    
+    <div class="test-section">
+        <h2 id="sampleTitle">Sample Question</h2>
+        
+        <div class="english-text">
+            <strong>English:</strong> What is the supreme law of the land?
+        </div>
+        
+        <div class="pashto-text">
+            <strong>پښتو:</strong> د هېواد تر ټولو لوړ قانون څه دی؟
+        </div>
+        
+        <div class="english-text">
+            <strong>Answer (English):</strong> The Constitution
+        </div>
+        
+        <div class="pashto-text">
+            <strong>ځواب (پښتو):</strong> اساسي قانون
+        </div>
+        
+        <button class="test-button" onclick="testTextToSpeech('en')">🔊 Test English Audio</button>
+        <button class="test-button" onclick="testTextToSpeech('ps')">🔊 Test Pashto Audio</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Font & Display Test</h2>
+        <div id="fontTest"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Data Loading Test</h2>
+        <div id="dataTest"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Browser Compatibility</h2>
+        <div id="compatibilityTest"></div>
+    </div>
+
+    <script type="module">
+        // Test data loading
+        try {
+            const { citizenshipData } = await import('./src/data/citizenshipData.js');
+            
+            const dataTest = document.getElementById('dataTest');
+            dataTest.innerHTML = `
+                <div class="result success">✅ Data loaded successfully! Found ${citizenshipData.length} questions.</div>
+                <div class="result info">First question (English): ${citizenshipData[0].questionEN}</div>
+                <div class="result info">First question (Pashto): ${citizenshipData[0].questionPS}</div>
+            `;
+            
+            // Test more questions
+            const pashtoQuestions = citizenshipData.filter(q => q.questionPS && q.questionPS.trim() !== '');
+            dataTest.innerHTML += `<div class="result success">✅ ${pashtoQuestions.length} questions have Pashto translations.</div>`;
+            
+        } catch (error) {
+            document.getElementById('dataTest').innerHTML = `
+                <div class="result error">❌ Error loading data: ${error.message}</div>
+            `;
+        }
+        
+        // Test fonts
+        const fontTest = document.getElementById('fontTest');
+        fontTest.innerHTML = `
+            <div class="english-text">English text with Inter font: The quick brown fox jumps over the lazy dog.</div>
+            <div class="pashto-text">Pashto text with Noto Naskh Arabic: د پښتو ژبه ډېره ښکلې ده. دا د افغانستان رسمي ژبه ده.</div>
+        `;
+        
+        // Test browser compatibility
+        const compatTest = document.getElementById('compatibilityTest');
+        let compatResults = '';
+        
+        // Test Text-to-Speech
+        if ('speechSynthesis' in window) {
+            compatResults += '<div class="result success">✅ Text-to-Speech is supported</div>';
+        } else {
+            compatResults += '<div class="result error">❌ Text-to-Speech is not supported</div>';
+        }
+        
+        // Test Audio API
+        try {
+            const audio = new Audio();
+            compatResults += '<div class="result success">✅ Audio API is supported</div>';
+        } catch (error) {
+            compatResults += '<div class="result error">❌ Audio API is not supported</div>';
+        }
+        
+        // Test Local Storage
+        try {
+            localStorage.setItem('test', 'value');
+            localStorage.removeItem('test');
+            compatResults += '<div class="result success">✅ Local Storage is supported</div>';
+        } catch (error) {
+            compatResults += '<div class="result error">❌ Local Storage is not supported</div>';
+        }
+        
+        // Test CSS support
+        if (CSS.supports('direction', 'rtl')) {
+            compatResults += '<div class="result success">✅ RTL text direction is supported</div>';
+        } else {
+            compatResults += '<div class="result error">❌ RTL text direction may not work</div>';
+        }
+        
+        compatTest.innerHTML = compatResults;
+        
+        // Language selector functionality
+        document.getElementById('languageSelect').addEventListener('change', (e) => {
+            const lang = e.target.value;
+            const title = document.getElementById('sampleTitle');
+            
+            if (lang === 'ps') {
+                title.textContent = 'د نمونې پوښتنه';
+                document.documentElement.setAttribute('dir', 'rtl');
+                document.documentElement.setAttribute('lang', 'ps');
+            } else {
+                title.textContent = 'Sample Question';
+                document.documentElement.setAttribute('dir', 'ltr');
+                document.documentElement.setAttribute('lang', 'en');
+            }
+        });
+        
+        // Global function for testing TTS
+        window.testTextToSpeech = function(lang) {
+            if ('speechSynthesis' in window) {
+                const text = lang === 'ps' 
+                    ? 'د هېواد تر ټولو لوړ قانون څه دی؟ اساسي قانون'
+                    : 'What is the supreme law of the land? The Constitution';
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang === 'ps' ? 'ps-AF' : 'en-US';
+                utterance.rate = 0.8;
+                utterance.pitch = 1;
+                
+                speechSynthesis.speak(utterance);
+                
+                // Show feedback
+                const feedback = document.createElement('div');
+                feedback.className = 'result info';
+                feedback.textContent = `🔊 Playing ${lang === 'ps' ? 'Pashto' : 'English'} text-to-speech...`;
+                document.body.appendChild(feedback);
+                
+                setTimeout(() => feedback.remove(), 3000);
+            } else {
+                alert('Text-to-speech is not supported in this browser.');
+            }
+        };
+    </script>
+</body>
+</html>

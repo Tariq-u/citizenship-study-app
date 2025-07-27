@@ -101,12 +101,39 @@ playAudioButton.addEventListener('click', () => {
         audioPlayer.pause();
     }
 
-    audioPlayer = new Audio(audioSrc);
+    // Fix audio path
+    const correctedAudioSrc = audioSrc.replace('/audio/', 'src/assets/audio/');
+
+    audioPlayer = new Audio(correctedAudioSrc);
+    audioPlayer.onerror = () => {
+        // Try text-to-speech as fallback
+        tryTextToSpeechFlashcard();
+    };
     audioPlayer.play().catch(error => {
         console.error('Audio playback failed:', error);
-        alert('Audio file not found. Please check if audio files are available.');
+        tryTextToSpeechFlashcard();
     });
 });
+
+function tryTextToSpeechFlashcard() {
+    const currentQuestion = questions[currentQuestionIndex];
+    const questionText = currentLanguage === 'en' ? currentQuestion.questionEN : currentQuestion.questionPS;
+    const answerText = currentLanguage === 'en' ? currentQuestion.answerEN : currentQuestion.answerPS;
+    const fullText = questionText + '. ' + answerText;
+
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(fullText);
+        utterance.lang = currentLanguage === 'ps' ? 'ps-AF' : 'en-US';
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        speechSynthesis.speak(utterance);
+    } else {
+        const message = currentLanguage === 'ps'
+            ? 'د غږ فایل موندل نشو. د متن څخه غږ جوړول هم د دغه براوزر لخوا ملاتړ نشو.'
+            : 'Audio file not found and text-to-speech is not supported in this browser.';
+        alert(message);
+    }
+}
 
 // Load the next question
 nextButton.addEventListener('click', () => {

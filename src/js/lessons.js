@@ -56,7 +56,10 @@ function handleAudioPlay(audioSrc, button) {
     loadingIcon.classList.remove('hidden');
     button.disabled = true;
 
-    audioPlayer = new Audio(audioSrc);
+    // Fix audio path - convert to correct path
+    const correctedAudioSrc = audioSrc.replace('/audio/', 'src/assets/audio/');
+
+    audioPlayer = new Audio(correctedAudioSrc);
     audioPlayer.onended = () => {
         // Reset button state
         playIcon.classList.remove('hidden');
@@ -68,7 +71,9 @@ function handleAudioPlay(audioSrc, button) {
         playIcon.classList.remove('hidden');
         loadingIcon.classList.add('hidden');
         button.disabled = false;
-        alert('Audio file not found. Please check if audio files are available.');
+
+        // Try text-to-speech as fallback
+        tryTextToSpeech(button, audioSrc);
     };
     audioPlayer.play().catch(error => {
         console.error('Audio playback failed:', error);
@@ -76,7 +81,48 @@ function handleAudioPlay(audioSrc, button) {
         playIcon.classList.remove('hidden');
         loadingIcon.classList.add('hidden');
         button.disabled = false;
+
+        // Try text-to-speech as fallback
+        tryTextToSpeech(button, audioSrc);
     });
+}
+
+function tryTextToSpeech(button, audioSrc) {
+    // Get the question and answer text from the card
+    const card = button.closest('.question-card');
+    const questionText = card.querySelector('.question').textContent;
+    const answerText = card.querySelector('.answer').textContent;
+    const fullText = questionText + '. ' + answerText;
+
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(fullText);
+
+        // Set language based on current selection
+        if (currentLanguage === 'ps') {
+            utterance.lang = 'ps-AF'; // Pashto Afghanistan
+        } else {
+            utterance.lang = 'en-US';
+        }
+
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+
+        utterance.onend = () => {
+            const playIcon = button.querySelector('.play-icon');
+            const loadingIcon = button.querySelector('.loading-icon');
+            playIcon.classList.remove('hidden');
+            loadingIcon.classList.add('hidden');
+            button.disabled = false;
+        };
+
+        speechSynthesis.speak(utterance);
+    } else {
+        // Show user-friendly message
+        const message = currentLanguage === 'ps'
+            ? 'د غږ فایل موندل نشو. د متن څخه غږ جوړول هم د دغه براوزر لخوا ملاتړ نشو.'
+            : 'Audio file not found and text-to-speech is not supported in this browser.';
+        alert(message);
+    }
 }
 
 function createQuestionCard(q, index) {
