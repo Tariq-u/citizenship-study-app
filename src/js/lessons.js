@@ -12,25 +12,36 @@ const translations = {
         'American Government': 'American Government',
         'American History': 'American History',
         'Integrated Civics': 'Integrated Civics',
+        'All Sections': 'All Sections',
+        'Search': 'Search questions...',
         'Questions': 'Questions',
         'Progress': 'Progress',
-        'Lessons': 'Lessons'
+        'Lessons': 'Lessons',
+        'Study Mode': 'Study Mode',
+        'Show Completed': 'Show Completed',
+        'Show Bookmarked': 'Show Bookmarked'
     },
     ps: {
         'American Government': 'د امریکا حکومت',
         'American History': 'د امریکا تاریخ',
         'Integrated Civics': 'ګډ مدني زده کړې',
+        'All Sections': 'ټول برخې',
+        'Search': 'پوښتنې پلټئ...',
         'Questions': 'پوښتنې',
         'Progress': 'پرمختګ',
-        'Lessons': 'زده کړې'
+        'Lessons': 'زده کړې',
+        'Study Mode': 'د زده کړې حالت',
+        'Show Completed': 'بشپړ شوي وښایاست',
+        'Show Bookmarked': 'نښه شوي وښایاست'
     }
 };
 
-let currentLanguage = localStorage.getItem('selectedLanguage') || 'en';
-let currentSection = sections.AMERICAN_GOVERNMENT;
 let audioPlayer = null;
 let bookmarkedQuestions = JSON.parse(localStorage.getItem('bookmarkedQuestions') || '[]');
 let completedQuestions = JSON.parse(localStorage.getItem('completedQuestions') || '[]');
+let currentFilter = 'all'; // 'all', 'completed', 'bookmarked', or section name
+let searchQuery = '';
+let studyMode = false;
 
 function createSectionNav() {
     const nav = document.createElement('nav');
@@ -44,7 +55,7 @@ function createSectionNav() {
     return nav;
 }
 
-function handleAudioPlay(audioSrc, button) {
+function handleAudioPlay(audioSrc, button, language = 'en') {
     if (audioPlayer) {
         audioPlayer.pause();
     }
@@ -73,7 +84,7 @@ function handleAudioPlay(audioSrc, button) {
         button.disabled = false;
 
         // Try text-to-speech as fallback
-        tryTextToSpeech(button, audioSrc);
+        tryTextToSpeech(button, language);
     };
     audioPlayer.play().catch(error => {
         console.error('Audio playback failed:', error);
@@ -83,27 +94,30 @@ function handleAudioPlay(audioSrc, button) {
         button.disabled = false;
 
         // Try text-to-speech as fallback
-        tryTextToSpeech(button, audioSrc);
+        tryTextToSpeech(button, language);
     });
 }
 
-function tryTextToSpeech(button, audioSrc) {
-    // Get the question and answer text from the card
+function tryTextToSpeech(button, language) {
+    // Get the question and answer text from the card based on language
     const card = button.closest('.question-card');
-    const questionText = card.querySelector('.question').textContent;
-    const answerText = card.querySelector('.answer').textContent;
+    let questionText, answerText;
+
+    if (language === 'ps') {
+        questionText = card.querySelector('.question-pashto').textContent.replace('پښتو:', '').trim();
+        answerText = card.querySelector('.answer-pashto').textContent.replace('ځواب:', '').trim();
+    } else {
+        questionText = card.querySelector('.question-english').textContent.replace('English:', '').trim();
+        answerText = card.querySelector('.answer-english').textContent.replace('Answer:', '').trim();
+    }
+
     const fullText = questionText + '. ' + answerText;
 
     if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(fullText);
 
-        // Set language based on current selection
-        if (currentLanguage === 'ps') {
-            utterance.lang = 'ps-AF'; // Pashto Afghanistan
-        } else {
-            utterance.lang = 'en-US';
-        }
-
+        // Set language
+        utterance.lang = language === 'ps' ? 'ps-AF' : 'en-US';
         utterance.rate = 0.8;
         utterance.pitch = 1;
 
@@ -118,7 +132,7 @@ function tryTextToSpeech(button, audioSrc) {
         speechSynthesis.speak(utterance);
     } else {
         // Show user-friendly message
-        const message = currentLanguage === 'ps'
+        const message = language === 'ps'
             ? 'د غږ فایل موندل نشو. د متن څخه غږ جوړول هم د دغه براوزر لخوا ملاتړ نشو.'
             : 'Audio file not found and text-to-speech is not supported in this browser.';
         alert(message);
@@ -134,23 +148,43 @@ function createQuestionCard(q, index) {
     card.innerHTML = `
         <div class="card-header">
             <span class="question-number">#${q.id}</span>
-            <span class="section-tag">${translations[currentLanguage][q.section] || q.section}</span>
+            <span class="section-tag">${q.section}</span>
         </div>
-        <div class="question" lang="${currentLanguage}">
-            ${currentLanguage === 'en' ? q.questionEN : q.questionPS}
+        <div class="question-section">
+            <div class="question-english">
+                <span class="language-label">English:</span>
+                ${q.questionEN}
+            </div>
+            <div class="question-pashto" lang="ps">
+                <span class="language-label">پښتو:</span>
+                ${q.questionPS}
+            </div>
         </div>
-        <div class="answer" lang="${currentLanguage}">
-            ${currentLanguage === 'en' ? q.answerEN : q.answerPS}
+        <div class="answer-section">
+            <div class="answer-english">
+                <span class="language-label">Answer:</span>
+                ${q.answerEN}
+            </div>
+            <div class="answer-pashto" lang="ps">
+                <span class="language-label">ځواب:</span>
+                ${q.answerPS}
+            </div>
         </div>
         <div class="card-footer">
-            <button class="audio-button" onclick="handleAudioPlay('${currentLanguage === 'en' ? q.audioEN : q.audioPS}', this)">
+            <button class="audio-button english-audio" onclick="handleAudioPlay('${q.audioEN}', this, 'en')" title="Play English Audio">
                 <span class="play-icon">▶</span>
                 <span class="loading-icon hidden">⌛</span>
+                <span class="audio-label">EN</span>
             </button>
-            <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})">
+            <button class="audio-button pashto-audio" onclick="handleAudioPlay('${q.audioPS}', this, 'ps')" title="Play Pashto Audio">
+                <span class="play-icon">▶</span>
+                <span class="loading-icon hidden">⌛</span>
+                <span class="audio-label">PS</span>
+            </button>
+            <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})" title="Bookmark">
                 <span class="bookmark-icon">${isBookmarked ? '🔖' : '📑'}</span>
             </button>
-            <button class="complete-btn ${isCompleted ? 'completed' : ''}" onclick="toggleComplete(${q.id})">
+            <button class="complete-btn ${isCompleted ? 'completed' : ''}" onclick="toggleComplete(${q.id})" title="Mark as Complete">
                 <span class="complete-icon">${isCompleted ? '✅' : '⭕'}</span>
             </button>
         </div>
@@ -236,39 +270,10 @@ window.handleAudioPlay = handleAudioPlay;
 window.toggleBookmark = toggleBookmark;
 window.toggleComplete = toggleComplete;
 
-function updatePageLanguage() {
-    // Update page title
-    const lessonsTitle = document.getElementById('lessonsTitle');
-    if (lessonsTitle) {
-        lessonsTitle.textContent = translations[currentLanguage]['Lessons'];
-    }
-
-    // Update document direction for RTL languages
-    if (currentLanguage === 'ps') {
-        document.documentElement.setAttribute('dir', 'rtl');
-        document.documentElement.setAttribute('lang', 'ps');
-    } else {
-        document.documentElement.setAttribute('dir', 'ltr');
-        document.documentElement.setAttribute('lang', 'en');
-    }
-}
-
-document.getElementById('languageSelect').addEventListener('change', (e) => {
-    currentLanguage = e.target.value;
-    localStorage.setItem('selectedLanguage', currentLanguage);
-    updatePageLanguage();
-    renderQuestions();
-});
-
 // Initialize the app
 function initializeLessons() {
-    // Set language selector to saved preference
-    const languageSelect = document.getElementById('languageSelect');
-    if (languageSelect) {
-        languageSelect.value = currentLanguage;
-    }
-
-    updatePageLanguage();
+    // Set document to support both LTR and RTL
+    document.documentElement.setAttribute('lang', 'en');
     renderQuestions();
 }
 

@@ -42,23 +42,8 @@ function initializeApp() {
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 
-    // Initialize language selector
-    const languageSelect = document.getElementById('languageSelect');
-    if (languageSelect) {
-        languageSelect.addEventListener('change', (e) => {
-            currentLanguage = e.target.value;
-            updateLanguage();
-            localStorage.setItem('selectedLanguage', currentLanguage);
-        });
-
-        // Load saved language preference
-        const savedLanguage = localStorage.getItem('selectedLanguage');
-        if (savedLanguage) {
-            currentLanguage = savedLanguage;
-            languageSelect.value = savedLanguage;
-            updateLanguage();
-        }
-    }
+    // Set document to support both languages
+    document.documentElement.setAttribute('lang', 'en');
 }
 
 function updateProgressDisplay() {
@@ -77,47 +62,6 @@ function updateOnlineStatus() {
     }
 }
 
-function updateLanguage() {
-    const elements = {
-        appTitle: document.getElementById('appTitle'),
-        lessonsText: document.getElementById('lessonsText'),
-        flashcardsText: document.getElementById('flashcardsText'),
-        quizText: document.getElementById('quizText'),
-        offlineText: document.getElementById('offlineText'),
-        progressTitle: document.getElementById('progressTitle'),
-        questionsStudiedLabel: document.getElementById('questionsStudiedLabel'),
-        quizScoreLabel: document.getElementById('quizScoreLabel')
-    };
-
-    // Update text content based on current language
-    Object.keys(elements).forEach(key => {
-        const element = elements[key];
-        const translationKey = key.replace('Text', '').replace('Label', '').replace('Title', '');
-        let finalKey = translationKey;
-
-        // Map element IDs to translation keys
-        if (key === 'appTitle') finalKey = 'appTitle';
-        else if (key === 'lessonsText') finalKey = 'lessons';
-        else if (key === 'flashcardsText') finalKey = 'flashcards';
-        else if (key === 'quizText') finalKey = 'quiz';
-        else if (key === 'offlineText') finalKey = 'offlineMode';
-        else if (key === 'progressTitle') finalKey = 'yourProgress';
-        else if (key === 'questionsStudiedLabel') finalKey = 'questionsStudied';
-        else if (key === 'quizScoreLabel') finalKey = 'quizScore';
-
-        if (element && translations[currentLanguage][finalKey]) {
-            element.textContent = translations[currentLanguage][finalKey];
-        }
-    });
-
-    // Update document direction for RTL languages
-    if (currentLanguage === 'ps') {
-        document.documentElement.setAttribute('dir', 'rtl');
-        document.documentElement.setAttribute('lang', 'ps');
-    } else {
-        document.documentElement.setAttribute('dir', 'ltr');
-        document.documentElement.setAttribute('lang', 'en');
-    }
-}
+// Removed updateLanguage function since we're showing both languages together
 
 initializeApp();

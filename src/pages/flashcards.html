@@ -14,20 +14,22 @@
     <header>
         <a href="../../index.html" class="back-button">←</a>
         <h1 id="flashcardsTitle">Flashcards</h1>
-        <select id="languageSelect">
-            <option value="en">English</option>
-            <option value="ps">پښتو (Pashto)</option>
-        </select>
+        <p class="subtitle">English & Pashto (انګلیسي او پښتو)</p>
     </header>
     <div class="flashcard-container">
         <div class="flashcard" id="flashcard">
             <div class="card-front">
-                <p id="question"></p>
+                <div class="question-english" id="questionEN"></div>
+                <div class="question-pashto" id="questionPS"></div>
                 <button id="showAnswer">Show Answer</button>
             </div>
             <div class="card-back">
-                <p id="answer"></p>
-                <button id="playAudio">🔊 Listen</button>
+                <div class="answer-english" id="answerEN"></div>
+                <div class="answer-pashto" id="answerPS"></div>
+                <div class="audio-controls">
+                    <button id="playAudioEN">🔊 English</button>
+                    <button id="playAudioPS">🔊 پښتو</button>
+                </div>
             </div>
         </div>
         <div class="controls">

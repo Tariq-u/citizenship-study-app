@@ -4,11 +4,12 @@ A beautiful, comprehensive study application for the U.S. Citizenship Test, feat
 
 ## ✨ Features
 
-### 🌍 **Multilingual Support**
-- **English**: Complete question set with answers
-- **Pashto (پښتو)**: Full translation of all questions and answers with RTL support
-- Persistent language selection across sessions
-- Beautiful typography with Google Fonts (Inter + Noto Naskh Arabic)
+### 🌍 **Dual Language Display**
+- **Side-by-Side Layout**: English and Pashto displayed together - no switching needed!
+- **Complete Translations**: All 100+ questions and answers in both languages
+- **RTL Support**: Proper right-to-left text direction for Pashto
+- **Beautiful Typography**: Google Fonts (Inter for English + Noto Naskh Arabic for Pashto)
+- **Color Coding**: Green for English, Blue for Pashto sections
 
 ### 📚 **Interactive Learning Tools**
 - **Lessons**: Study all 100+ citizenship test questions organized by sections
@@ -26,21 +27,23 @@ A beautiful, comprehensive study application for the U.S. Citizenship Test, feat
 ### 🔧 **Advanced Functionality**
 - **Bookmark System**: Save important questions for later review
 - **Completion Tracking**: Mark questions as studied
-- **Smart Audio Support**:
+- **Dual Audio Support**:
+  - Separate audio buttons for English and Pashto
   - Plays audio files when available
   - Falls back to text-to-speech when audio files are missing
-  - Supports both English and Pashto pronunciation
+  - Independent language pronunciation (click EN or PS buttons)
 - **Offline Support**: Works without internet connection (PWA ready)
 - **Local Storage**: Persistent progress and preferences
 
 ## 🎯 **Pashto Translation & Audio Status**
 
 ### ✅ **What's Working:**
-- **Complete Pashto Translations**: All 100+ questions and answers are fully translated
-- **UI Translation**: All interface elements have Pashto translations
-- **RTL Support**: Proper right-to-left text direction for Pashto
+- **Dual Language Display**: English and Pashto shown side-by-side simultaneously
+- **Complete Translations**: All 100+ questions and answers in both languages
+- **No Language Switching**: Both languages always visible - no dropdown needed!
+- **RTL Support**: Proper right-to-left text direction for Pashto sections
 - **Beautiful Typography**: Noto Naskh Arabic font for authentic Pashto display
-- **Text-to-Speech Fallback**: When audio files aren't available, the app uses browser TTS
+- **Dual Audio System**: Separate EN and PS buttons for independent audio playback
 
 ### 🔧 **Audio System:**
 - **Primary**: Looks for MP3 files in `src/assets/audio/en/` and `src/assets/audio/ps/`
