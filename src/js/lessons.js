@@ -465,11 +465,15 @@ function tryAudioFile(audioSrc, button, language) {
 
 // Helper function to clean text content from labels and prefixes
 function cleanTextContent(text, prefixesToRemove) {
+    if (!text || typeof text !== 'string') {
+        return '';
+    }
+
     let cleanText = text;
 
     // Remove all specified prefixes
     prefixesToRemove.forEach(prefix => {
-        cleanText = cleanText.replace(prefix, '');
+        cleanText = cleanText.replace(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
     });
 
     // Remove common artifacts and clean up
@@ -483,6 +487,7 @@ function cleanTextContent(text, prefixesToRemove) {
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .trim(); // Remove leading/trailing whitespace
 
+    console.log('🧹 Cleaned text:', cleanText.substring(0, 50) + '...');
     return cleanText;
 }
 
@@ -490,9 +495,15 @@ function tryTextToSpeech(button, language) {
     const card = button.closest('.question-card');
     let questionText, answerText;
 
+    console.log('🔊 Starting text-to-speech for language:', language);
+
     if (language === 'ps') {
         const questionEl = card.querySelector('.question-pashto');
         const answerEl = card.querySelector('.answer-pashto');
+
+        console.log('🔊 Found Pashto elements:', !!questionEl, !!answerEl);
+        console.log('🔊 Raw question text:', questionEl?.textContent);
+        console.log('🔊 Raw answer text:', answerEl?.textContent);
 
         // Get pure text content without any labels
         questionText = questionEl ? cleanTextContent(questionEl.textContent, ['🇦🇫 پښتو:', 'پښتو:', 'پوښتنه:']) : '';
@@ -501,44 +512,80 @@ function tryTextToSpeech(button, language) {
         const questionEl = card.querySelector('.question-english');
         const answerEl = card.querySelector('.answer-english');
 
+        console.log('🔊 Found English elements:', !!questionEl, !!answerEl);
+        console.log('🔊 Raw question text:', questionEl?.textContent);
+        console.log('🔊 Raw answer text:', answerEl?.textContent);
+
         // Get pure text content without any labels
         questionText = questionEl ? cleanTextContent(questionEl.textContent, ['🇺🇸 English:', 'English:', 'Question:']) : '';
         answerText = answerEl ? cleanTextContent(answerEl.textContent, ['✅ Answer:', 'Answer:', 'ځواب:']) : '';
     }
 
+    console.log('🔊 Cleaned question:', questionText);
+    console.log('🔊 Cleaned answer:', answerText);
+
     // Speak both question and answer with clean text only
     const textToSpeak = questionText + '. ' + answerText;
-    console.log('🔊 Text-to-speech (clean):', textToSpeak.substring(0, 50) + '...');
+    console.log('🔊 Final text to speak:', textToSpeak);
 
-    if ('speechSynthesis' in window) {
+    if ('speechSynthesis' in window && textToSpeak.trim() !== '') {
         // Stop any ongoing speech
         speechSynthesis.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = language === 'ps' ? 'ps-AF' : 'en-US';
-        utterance.rate = 0.8;
-        utterance.pitch = 1;
-        utterance.volume = 1;
+        // Wait a moment for speechSynthesis to be ready
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
-        utterance.onend = () => {
-            resetAudioButton(button);
-        };
+            // Use more compatible language codes
+            if (language === 'ps') {
+                // Try different Pashto/Urdu language codes
+                utterance.lang = 'ur-PK'; // Urdu as fallback for Pashto
+            } else {
+                utterance.lang = 'en-US';
+            }
 
-        utterance.onerror = (error) => {
-            console.log('🔊 Text-to-speech error:', error);
-            resetAudioButton(button);
-            const message = language === 'ps'
-                ? 'د غږ فایل موندل نشو او د متن څخه غږ جوړول هم ناکام شو.'
-                : 'Audio file not found and text-to-speech failed.';
-            alert(message);
-        };
+            utterance.rate = 0.8;
+            utterance.pitch = 1;
+            utterance.volume = 1;
 
-        speechSynthesis.speak(utterance);
+            utterance.onstart = () => {
+                console.log('🔊 Text-to-speech started successfully');
+            };
+
+            utterance.onend = () => {
+                console.log('🔊 Text-to-speech completed');
+                resetAudioButton(button);
+            };
+
+            utterance.onerror = (error) => {
+                console.log('🔊 Text-to-speech error:', error);
+                resetAudioButton(button);
+
+                // Try with default language as fallback
+                if (language === 'ps') {
+                    console.log('🔊 Retrying Pashto text with English voice...');
+                    const fallbackUtterance = new SpeechSynthesisUtterance(textToSpeak);
+                    fallbackUtterance.lang = 'en-US';
+                    fallbackUtterance.rate = 0.7;
+                    fallbackUtterance.onend = () => resetAudioButton(button);
+                    fallbackUtterance.onerror = () => {
+                        resetAudioButton(button);
+                        alert('Audio playback failed. Please try again.');
+                    };
+                    speechSynthesis.speak(fallbackUtterance);
+                } else {
+                    alert('Audio playback failed. Please try again.');
+                }
+            };
+
+            console.log('🔊 Starting text-to-speech with text:', textToSpeak.substring(0, 50) + '...');
+            speechSynthesis.speak(utterance);
+        }, 100);
     } else {
         resetAudioButton(button);
-        const message = language === 'ps'
-            ? 'د غږ فایل موندل نشو. د متن څخه غږ جوړول هم د دغه براوزر لخوا ملاتړ نشو.'
-            : 'Audio file not found and text-to-speech is not supported in this browser.';
+        const message = !textToSpeak.trim()
+            ? 'No text content found to play.'
+            : 'Text-to-speech is not supported in this browser.';
         alert(message);
     }
 }
@@ -636,6 +683,40 @@ function setupEventListeners() {
     });
 }
 
+// Test audio function
+function testAudio() {
+    console.log('🔊 Testing audio system...');
+
+    if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+
+        const testText = "Audio system is working correctly. This is a test message.";
+        const utterance = new SpeechSynthesisUtterance(testText);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onstart = () => {
+            console.log('🔊 Test audio started');
+        };
+
+        utterance.onend = () => {
+            console.log('🔊 Test audio completed');
+            alert('Audio test completed successfully!');
+        };
+
+        utterance.onerror = (error) => {
+            console.log('🔊 Test audio error:', error);
+            alert('Audio test failed: ' + error.error);
+        };
+
+        speechSynthesis.speak(utterance);
+    } else {
+        alert('Speech synthesis is not supported in this browser.');
+    }
+}
+
 // Make functions globally accessible
 window.handleAudioPlay = handleAudioPlay;
 window.toggleBookmark = toggleBookmark;
@@ -646,3 +727,4 @@ window.toggleStudyMode = toggleStudyMode;
 window.showProgress = showProgress;
 window.scrollToTop = scrollToTop;
 window.toggleTheme = toggleTheme;
+window.testAudio = testAudio;
