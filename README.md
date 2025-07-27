@@ -100,6 +100,46 @@ cd citizenship-study-app
 python -m http.server 8000
 ```
 
+## ⌨️ **Keyboard Shortcuts**
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+F` | Focus search box |
+| `Ctrl+S` | Toggle study mode |
+| `Ctrl+Shift+T` | Toggle dark/light theme |
+| `Escape` | Clear search |
+
+## 🎯 **Quick Start Guide**
+
+1. **Open the app**: Launch `index.html` in your browser
+2. **Start studying**: Click "Lessons" to see all questions
+3. **Use search**: Press `Ctrl+F` to find specific topics
+4. **Study mode**: Press `Ctrl+S` to hide answers and test yourself
+5. **Track progress**: Bookmark questions and mark them complete
+6. **Audio support**: Click EN/PS buttons to hear pronunciations
+7. **Dark mode**: Press `Ctrl+Shift+T` for comfortable night studying
+
+## 🧪 **Demo & Testing**
+
+- **`demo-features.html`** - Comprehensive feature showcase
+- **`test-dual-language.html`** - Dual language layout demo
+- **`verify-pashto.html`** - Pashto translation verification
+- **`test-validation.html`** - Technical validation tests
+
+## 🎉 **What Makes This App Special**
+
+✅ **Complete**: All 100+ official USCIS citizenship test questions
+✅ **Bilingual**: English & Pashto displayed side-by-side
+✅ **Smart**: Advanced search, filtering, and study modes
+✅ **Beautiful**: Modern design with dark/light themes
+✅ **Accessible**: Keyboard shortcuts and screen reader support
+✅ **Offline**: Works without internet connection
+✅ **Progressive**: Tracks your study progress and statistics
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Made with ❤️ for aspiring U.S. citizens studying in English and Pashto**

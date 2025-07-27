@@ -3,7 +3,7 @@ let progress = {
     quizScore: 0
 };
 
-let currentLanguage = 'en';
+let currentTheme = localStorage.getItem('theme') || 'light';
 
 // Translation object for main page
 const translations = {
@@ -44,6 +44,9 @@ function initializeApp() {
 
     // Set document to support both languages
     document.documentElement.setAttribute('lang', 'en');
+
+    // Initialize theme
+    applyTheme(currentTheme);
 }
 
 function updateProgressDisplay() {
@@ -62,6 +65,37 @@ function updateOnlineStatus() {
     }
 }
 
-// Removed updateLanguage function since we're showing both languages together
+// Theme management functions
+function toggleTheme() {
+    const themes = ['light', 'dark'];
+    const currentIndex = themes.indexOf(currentTheme);
+    currentTheme = themes[(currentIndex + 1) % themes.length];
+
+    applyTheme(currentTheme);
+    localStorage.setItem('theme', currentTheme);
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+
+    // Update theme toggle button
+    const themeToggle = document.querySelector('.theme-toggle');
+    if (themeToggle) {
+        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        themeToggle.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
+    }
+}
+
+// Make theme functions globally accessible
+window.toggleTheme = toggleTheme;
+
+// Add keyboard shortcut for theme toggle
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + Shift + T for theme toggle
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') {
+        e.preventDefault();
+        toggleTheme();
+    }
+});
 
 initializeApp();
