@@ -239,11 +239,28 @@ function createQuestionCard(q, index) {
     const isBookmarked = bookmarkedQuestions.includes(q.id);
     const isCompleted = completedQuestions.includes(q.id);
     
-    // Ensure we have the data and clean black squares
+    // Ensure we have the data and replace black squares with numbers
     const questionEN = q.questionEN || 'Question not available';
     const questionPS = q.questionPS || 'پوښتنه شتون نلري';
-    const answerEN = (q.answerEN || 'Answer not available').replace(/▪/g, '•').replace(/■/g, '•').replace(/□/g, '•');
-    const answerPS = (q.answerPS || 'ځواب شتون نلري').replace(/▪/g, '•').replace(/■/g, '•').replace(/□/g, '•');
+
+    // Replace black squares with numbered lists
+    function replaceSquaresWithNumbers(text) {
+        if (!text || typeof text !== 'string') return text;
+
+        // Split by black square bullets and create numbered list
+        const items = text.split(/▪|■|□/).filter(item => item.trim());
+
+        if (items.length <= 1) {
+            // No bullets found, return original text cleaned
+            return text.replace(/▪|■|□/g, '').trim();
+        }
+
+        // Create numbered list
+        return items.map((item, index) => `${index + 1}. ${item.trim()}`).join(' ');
+    }
+
+    const answerEN = replaceSquaresWithNumbers(q.answerEN || 'Answer not available');
+    const answerPS = replaceSquaresWithNumbers(q.answerPS || 'ځواب شتون نلري');
     
     card.innerHTML = `
         <div class="card-header">
@@ -481,9 +498,9 @@ function cleanTextContent(text, prefixesToRemove) {
         .replace(/^\s*پوښتنه\s*:?\s*/, '') // Remove Pashto "Question:" prefix
         .replace(/^\s*ځواب\s*:?\s*/, '') // Remove Pashto "Answer:" prefix
         .replace(/[🇺🇸🇦🇫✅📝🔊]/g, '') // Remove emoji flags and symbols
-        .replace(/▪/g, '•') // Replace black square bullets with regular bullets
-        .replace(/■/g, '•') // Replace black squares with regular bullets
-        .replace(/□/g, '•') // Replace white squares with regular bullets
+        .replace(/▪/g, '') // Remove black square bullets
+        .replace(/■/g, '') // Remove black squares
+        .replace(/□/g, '') // Remove white squares
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .trim(); // Remove leading/trailing whitespace
 
@@ -493,112 +510,74 @@ function cleanTextContent(text, prefixesToRemove) {
 
 function tryTextToSpeech(button, language) {
     const card = button.closest('.question-card');
-    let questionText, answerText;
 
-    console.log('🔊 Starting text-to-speech for language:', language);
+    // Get text content directly from the card
+    let questionText = '';
+    let answerText = '';
 
     if (language === 'ps') {
         const questionEl = card.querySelector('.question-pashto');
         const answerEl = card.querySelector('.answer-pashto');
 
-        console.log('🔊 Found Pashto elements:', !!questionEl, !!answerEl);
-        console.log('🔊 Raw question text:', questionEl?.textContent);
-        console.log('🔊 Raw answer text:', answerEl?.textContent);
-
-        // Get pure text content without any labels
-        questionText = questionEl ? cleanTextContent(questionEl.textContent, ['🇦🇫 پښتو:', 'پښتو:', 'پوښتنه:']) : '';
-        answerText = answerEl ? cleanTextContent(answerEl.textContent, ['✅ ځواب:', 'ځواب:', 'Answer:']) : '';
+        if (questionEl) {
+            questionText = questionEl.textContent.replace('🇦🇫 پښتو:', '').trim();
+        }
+        if (answerEl) {
+            answerText = answerEl.textContent.replace('✅ ځواب:', '').trim();
+        }
     } else {
         const questionEl = card.querySelector('.question-english');
         const answerEl = card.querySelector('.answer-english');
 
-        console.log('🔊 Found English elements:', !!questionEl, !!answerEl);
-        console.log('🔊 Raw question text:', questionEl?.textContent);
-        console.log('🔊 Raw answer text:', answerEl?.textContent);
-
-        // Get pure text content without any labels
-        questionText = questionEl ? cleanTextContent(questionEl.textContent, ['🇺🇸 English:', 'English:', 'Question:']) : '';
-        answerText = answerEl ? cleanTextContent(answerEl.textContent, ['✅ Answer:', 'Answer:', 'ځواب:']) : '';
+        if (questionEl) {
+            questionText = questionEl.textContent.replace('🇺🇸 English:', '').trim();
+        }
+        if (answerEl) {
+            answerText = answerEl.textContent.replace('✅ Answer:', '').trim();
+        }
     }
 
-    console.log('🔊 Cleaned question:', questionText);
-    console.log('🔊 Cleaned answer:', answerText);
+    // Clean the text
+    const cleanText = (questionText + '. ' + answerText)
+        .replace(/[🇺🇸🇦🇫✅]/g, '') // Remove emojis
+        .replace(/\s+/g, ' ') // Clean spaces
+        .trim();
 
-    // Check if we have valid text
-    if (!questionText && !answerText) {
-        console.error('🔊 No text found to speak');
+    console.log('🔊 Text to speak:', cleanText.substring(0, 100));
+
+    // Check if we have text
+    if (!cleanText || cleanText.length < 3) {
+        console.log('🔊 No valid text found');
         resetAudioButton(button);
-        alert('No text content found to play.');
         return;
     }
 
-    // Speak both question and answer with clean text only
-    const textToSpeak = (questionText + '. ' + answerText).replace(/^\.\s*/, '').trim();
-    console.log('🔊 Final text to speak:', textToSpeak);
-    console.log('🔊 Text length:', textToSpeak.length);
+    // Use the simplest possible speech synthesis
+    if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
 
-    // Check if speech synthesis is available and working
-    if (!('speechSynthesis' in window)) {
-        resetAudioButton(button);
-        console.log('🔊 Speech synthesis not supported');
-        return;
-    }
-
-    if (!textToSpeak.trim()) {
-        resetAudioButton(button);
-        console.log('🔊 No text to speak');
-        return;
-    }
-
-    // Stop any ongoing speech
-    speechSynthesis.cancel();
-
-    // Simple, reliable speech synthesis
-    try {
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-        // Use basic settings for maximum compatibility
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-
-        // Track if speech has started
-        let speechStarted = false;
-        let speechCompleted = false;
-
-        utterance.onstart = () => {
-            speechStarted = true;
-            console.log('🔊 Speech started');
-        };
-
-        utterance.onend = () => {
-            speechCompleted = true;
-            console.log('🔊 Speech completed normally');
-            resetAudioButton(button);
-        };
-
-        utterance.onerror = (event) => {
-            console.log('🔊 Speech error event:', event.error);
-            if (!speechCompleted) {
-                resetAudioButton(button);
-            }
-        };
-
-        // Start speech
-        console.log('🔊 Starting speech:', textToSpeak.substring(0, 50) + '...');
-        speechSynthesis.speak(utterance);
-
-        // Safety timeout - reset button after reasonable time
         setTimeout(() => {
-            if (!speechCompleted && button.disabled) {
-                console.log('🔊 Safety timeout - resetting button');
-                resetAudioButton(button);
-            }
-        }, Math.max(3000, textToSpeak.length * 100)); // Dynamic timeout based on text length
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.rate = 0.8;
+            utterance.volume = 1;
 
-    } catch (error) {
-        console.error('🔊 Speech synthesis failed:', error);
+            utterance.onend = () => {
+                console.log('🔊 Speech finished');
+                resetAudioButton(button);
+            };
+
+            // Don't handle errors - just let it play
+            console.log('🔊 Starting speech...');
+            speechSynthesis.speak(utterance);
+
+            // Always reset button after 15 seconds max
+            setTimeout(() => {
+                resetAudioButton(button);
+            }, 15000);
+
+        }, 200);
+    } else {
+        console.log('🔊 Speech not supported');
         resetAudioButton(button);
     }
 }
