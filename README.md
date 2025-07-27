@@ -1,27 +1,34 @@
-# README.md
+# U.S. Citizenship Test Study App 🇺🇸
 
-# U.S. Citizenship Test Study App
+A beautiful, comprehensive study application for the U.S. Citizenship Test, featuring multilingual support and interactive learning tools with modern design.
 
-A Progressive Web App (PWA) to help users study for the U.S. Citizenship Test. The app includes:
+## ✨ Features
 
-- Study lessons
-- Flashcards
-- Quiz mode
-- Offline support
-- Multi-language support (English and Pashto)
+### 🌍 **Multilingual Support**
+- **English**: Complete question set with answers
+- **Pashto (پښتو)**: Full translation of all questions and answers with RTL support
+- Persistent language selection across sessions
+- Beautiful typography with Google Fonts (Inter + Noto Naskh Arabic)
 
-## Setup
+### 📚 **Interactive Learning Tools**
+- **Lessons**: Study all 100+ citizenship test questions organized by sections
+- **Flashcards**: Interactive card-based review with flip animations
+- **Practice Quiz**: Randomized 10-question quizzes with instant feedback
+- **Progress Tracking**: Monitor your study progress with visual indicators
 
-1. Clone the repository
-2. Open `index.html` in your browser
-3. For development, use a local server to avoid CORS issues
+### 🎨 **Modern Beautiful Design**
+- Gradient backgrounds and glassmorphism effects
+- Smooth animations and hover effects
+- Responsive design for all devices
+- Dark/light theme with beautiful color schemes
+- Card-based layouts with shadows and blur effects
 
-## Features
-
-- PWA with offline functionality
-- Progress tracking
-- Multi-language support
-- Interactive study modes
+### 🔧 **Advanced Functionality**
+- **Bookmark System**: Save important questions for later review
+- **Completion Tracking**: Mark questions as studied
+- **Audio Support**: Listen to questions and answers (when audio files are available)
+- **Offline Support**: Works without internet connection (PWA ready)
+- **Local Storage**: Persistent progress and preferences
 
 ## File Structure
 

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Validation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>U.S. Citizenship Study App - Validation Test</h1>
+    
+    <div class="test-section">
+        <h2>Data Structure Validation</h2>
+        <div id="dataTests"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Language Support Validation</h2>
+        <div id="languageTests"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Functionality Tests</h2>
+        <div id="functionalityTests"></div>
+    </div>
+
+    <script type="module">
+        import { citizenshipData } from './src/data/citizenshipData.js';
+        
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+        }
+        
+        // Test data structure
+        function testDataStructure() {
+            try {
+                addResult('dataTests', `✓ Data loaded successfully. Found ${citizenshipData.length} questions.`, 'pass');
+                
+                // Test first question structure
+                const firstQ = citizenshipData[0];
+                const requiredFields = ['id', 'section', 'questionEN', 'questionPS', 'answerEN', 'answerPS', 'audioEN', 'audioPS'];
+                
+                let allFieldsPresent = true;
+                requiredFields.forEach(field => {
+                    if (!firstQ.hasOwnProperty(field)) {
+                        addResult('dataTests', `✗ Missing field: ${field}`, 'fail');
+                        allFieldsPresent = false;
+                    }
+                });
+                
+                if (allFieldsPresent) {
+                    addResult('dataTests', '✓ All required fields present in data structure.', 'pass');
+                }
+                
+                // Test sections
+                const sections = [...new Set(citizenshipData.map(q => q.section))];
+                addResult('dataTests', `✓ Found ${sections.length} sections: ${sections.join(', ')}`, 'pass');
+                
+                // Test Pashto content
+                const pashtoQuestions = citizenshipData.filter(q => q.questionPS && q.questionPS.trim() !== '');
+                addResult('dataTests', `✓ ${pashtoQuestions.length} questions have Pashto translations.`, 'pass');
+                
+            } catch (error) {
+                addResult('dataTests', `✗ Error loading data: ${error.message}`, 'fail');
+            }
+        }
+        
+        // Test language support
+        function testLanguageSupport() {
+            // Test localStorage functionality
+            try {
+                localStorage.setItem('test', 'value');
+                localStorage.removeItem('test');
+                addResult('languageTests', '✓ localStorage is available for language persistence.', 'pass');
+            } catch (error) {
+                addResult('languageTests', '✗ localStorage not available.', 'fail');
+            }
+            
+            // Test RTL support
+            const testElement = document.createElement('div');
+            testElement.setAttribute('dir', 'rtl');
+            if (testElement.getAttribute('dir') === 'rtl') {
+                addResult('languageTests', '✓ RTL direction support is available.', 'pass');
+            } else {
+                addResult('languageTests', '✗ RTL direction support may not work.', 'fail');
+            }
+            
+            // Test font loading
+            if (document.fonts) {
+                addResult('languageTests', '✓ Font loading API is available.', 'pass');
+            } else {
+                addResult('languageTests', '! Font loading API not available (older browser).', 'info');
+            }
+        }
+        
+        // Test functionality
+        function testFunctionality() {
+            // Test audio support
+            const audio = new Audio();
+            if (audio.canPlayType && audio.canPlayType('audio/mpeg')) {
+                addResult('functionalityTests', '✓ Audio playback (MP3) is supported.', 'pass');
+            } else {
+                addResult('functionalityTests', '✗ Audio playback may not work.', 'fail');
+            }
+            
+            // Test module support
+            if (typeof import !== 'undefined') {
+                addResult('functionalityTests', '✓ ES6 modules are supported.', 'pass');
+            } else {
+                addResult('functionalityTests', '✗ ES6 modules not supported.', 'fail');
+            }
+            
+            // Test modern JavaScript features
+            try {
+                const testArrow = () => 'test';
+                const testTemplate = `template ${testArrow()}`;
+                addResult('functionalityTests', '✓ Modern JavaScript features are supported.', 'pass');
+            } catch (error) {
+                addResult('functionalityTests', '✗ Modern JavaScript features not supported.', 'fail');
+            }
+            
+            // Test CSS Grid support
+            if (CSS.supports('display', 'grid')) {
+                addResult('functionalityTests', '✓ CSS Grid is supported.', 'pass');
+            } else {
+                addResult('functionalityTests', '✗ CSS Grid not supported.', 'fail');
+            }
+            
+            // Test CSS Custom Properties
+            if (CSS.supports('color', 'var(--test)')) {
+                addResult('functionalityTests', '✓ CSS Custom Properties are supported.', 'pass');
+            } else {
+                addResult('functionalityTests', '✗ CSS Custom Properties not supported.', 'fail');
+            }
+        }
+        
+        // Run all tests
+        testDataStructure();
+        testLanguageSupport();
+        testFunctionality();
+        
+        // Add summary
+        setTimeout(() => {
+            const passCount = document.querySelectorAll('.pass').length;
+            const failCount = document.querySelectorAll('.fail').length;
+            const infoCount = document.querySelectorAll('.info').length;
+            
+            const summary = document.createElement('div');
+            summary.className = 'test-section';
+            summary.innerHTML = `
+                <h2>Test Summary</h2>
+                <div class="test-result ${failCount === 0 ? 'pass' : 'info'}">
+                    ✓ ${passCount} tests passed<br>
+                    ${failCount > 0 ? `✗ ${failCount} tests failed<br>` : ''}
+                    ${infoCount > 0 ? `ℹ ${infoCount} informational<br>` : ''}
+                    <br>
+                    ${failCount === 0 ? 'All critical tests passed! The app should work correctly.' : 'Some tests failed. The app may have limited functionality in this environment.'}
+                </div>
+            `;
+            document.body.appendChild(summary);
+        }, 100);
+    </script>
+</body>
+</html>

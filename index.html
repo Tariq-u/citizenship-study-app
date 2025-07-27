@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>U.S. Citizenship Test Study App</title>
     <link rel="manifest" href="src/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/css/style.css">
-    <meta name="theme-color" content="#1976d2">
+    <meta name="theme-color" content="#2563eb">
 </head>
 <body>
     <header>
-        <h1>U.S. Citizenship Test Study App</h1>
+        <h1 id="appTitle">U.S. Citizenship Test Study App</h1>
         <select id="languageSelect">
             <option value="en">English</option>
             <option value="ps">پښتو (Pashto)</option>
@@ -18,29 +21,29 @@
     </header>
     <nav>
         <a href="src/pages/lessons.html" class="nav-item">
-            <span class="icon">📘</span> Lessons
+            <span class="icon">📘</span> <span id="lessonsText">Lessons</span>
         </a>
         <a href="src/pages/flashcards.html" class="nav-item">
-            <span class="icon">🃏</span> Flashcards
+            <span class="icon">🃏</span> <span id="flashcardsText">Flashcards</span>
         </a>
         <a href="src/pages/quiz.html" class="nav-item">
-            <span class="icon">📝</span> Quiz
+            <span class="icon">📝</span> <span id="quizText">Quiz</span>
         </a>
     </nav>
     <div class="status-container">
         <div id="offlineIndicator" class="hidden">
-            <span class="icon">📱</span> Offline Mode
+            <span class="icon">📱</span> <span id="offlineText">Offline Mode</span>
         </div>
         <div class="progress-section">
-            <h2>Your Progress</h2>
+            <h2 id="progressTitle">Your Progress</h2>
             <div class="progress-stats">
                 <div class="stat-item">
                     <span id="questionsStudied">0/100</span>
-                    <label>Questions Studied</label>
+                    <label id="questionsStudiedLabel">Questions Studied</label>
                 </div>
                 <div class="stat-item">
                     <span id="quizScore">0%</span>
-                    <label>Quiz Score</label>
+                    <label id="quizScoreLabel">Quiz Score</label>
                 </div>
             </div>
         </div>

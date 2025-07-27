@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz - U.S. Citizenship Test Study App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/quiz.css">
 </head>
 <body>
     <header>
         <a href="../../index.html" class="back-button">←</a>
-        <h1>Quiz</h1>
+        <h1 id="quizTitle">Quiz</h1>
         <select id="languageSelect">
             <option value="en">English</option>
             <option value="ps">پښتو (Pashto)</option>
@@ -28,7 +31,6 @@
             <button id="nextQuestion">Next Question →</button>
         </div>
     </div>
-    <script src="../js/utils.js"></script>
-    <script src="../js/quiz.js"></script>
+    <script type="module" src="../js/quiz.js"></script>
 </body>
 </html>

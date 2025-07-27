@@ -1,91 +1,229 @@
 import { citizenshipData } from '../data/citizenshipData.js';
-import { AudioPlayer } from './audioPlayer.js';
 
-const lessonContent = document.getElementById('lessonContent');
-const languageSelect = document.getElementById('languageSelect');
-let currentLanguage = 'en';
-const QUESTIONS_PER_PAGE = 10;
-let currentPage = 1;
-
-function createQuestionElement(question) {
-    const div = document.createElement('div');
-    div.className = 'lesson-item';
-    
-    div.innerHTML = `
-        <div class="question-number">Question ${question.id}</div>
-        <div class="question">${currentLanguage === 'en' ? question.questionEn : question.questionPs}</div>
-        <div class="answer">${currentLanguage === 'en' ? question.answerEn : question.answerPs}</div>
-        <div class="audio-controls">
-            <button class="audio-button" data-audio="${currentLanguage === 'en' ? question.audioEn : question.audioPs}">
-                <span class="play-icon">▶</span>
-                <span class="loading-icon hidden">⌛</span>
-            </button>
-        </div>
-    `;
-    return div;
-}
-
-function renderPagination() {
-    const totalPages = Math.ceil(citizenshipData.length / QUESTIONS_PER_PAGE);
-    const paginationDiv = document.createElement('div');
-    paginationDiv.className = 'pagination';
-    
-    paginationDiv.innerHTML = `
-        <button ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">Previous</button>
-        <span>Page ${currentPage} of ${totalPages}</span>
-        <button ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">Next</button>
-    `;
-    
-    return paginationDiv;
-}
-
-function renderLessons() {
-    lessonContent.innerHTML = '';
-    const startIdx = (currentPage - 1) * QUESTIONS_PER_PAGE;
-    const endIdx = startIdx + QUESTIONS_PER_PAGE;
-    
-    citizenshipData.slice(startIdx, endIdx).forEach(question => {
-        lessonContent.appendChild(createQuestionElement(question));
-    });
-    
-    lessonContent.appendChild(renderPagination());
-}
-
-window.changePage = (page) => {
-    currentPage = page;
-    AudioPlayer.stop();
-    renderLessons();
+const sections = {
+    AMERICAN_GOVERNMENT: 'American Government',
+    AMERICAN_HISTORY: 'American History',
+    INTEGRATED_CIVICS: 'Integrated Civics'
 };
 
-function handleAudioPlay(button) {
-    const audio = new Audio(button.dataset.audio);
+// Translation object for UI elements
+const translations = {
+    en: {
+        'American Government': 'American Government',
+        'American History': 'American History',
+        'Integrated Civics': 'Integrated Civics',
+        'Questions': 'Questions',
+        'Progress': 'Progress',
+        'Lessons': 'Lessons'
+    },
+    ps: {
+        'American Government': 'د امریکا حکومت',
+        'American History': 'د امریکا تاریخ',
+        'Integrated Civics': 'ګډ مدني زده کړې',
+        'Questions': 'پوښتنې',
+        'Progress': 'پرمختګ',
+        'Lessons': 'زده کړې'
+    }
+};
+
+let currentLanguage = localStorage.getItem('selectedLanguage') || 'en';
+let currentSection = sections.AMERICAN_GOVERNMENT;
+let audioPlayer = null;
+let bookmarkedQuestions = JSON.parse(localStorage.getItem('bookmarkedQuestions') || '[]');
+let completedQuestions = JSON.parse(localStorage.getItem('completedQuestions') || '[]');
+
+function createSectionNav() {
+    const nav = document.createElement('nav');
+    nav.className = 'section-nav';
+    nav.innerHTML = Object.values(sections).map(section => `
+        <button class="section-btn ${currentSection === section ? 'active' : ''}"
+                onclick="changeSection('${section}')">
+            ${translations[currentLanguage][section] || section}
+        </button>
+    `).join('');
+    return nav;
+}
+
+function handleAudioPlay(audioSrc, button) {
+    if (audioPlayer) {
+        audioPlayer.pause();
+    }
+
+    // Show loading state
     const playIcon = button.querySelector('.play-icon');
     const loadingIcon = button.querySelector('.loading-icon');
-
     playIcon.classList.add('hidden');
     loadingIcon.classList.remove('hidden');
+    button.disabled = true;
 
-    audio.addEventListener('canplaythrough', () => {
-        loadingIcon.classList.add('hidden');
+    audioPlayer = new Audio(audioSrc);
+    audioPlayer.onended = () => {
+        // Reset button state
         playIcon.classList.remove('hidden');
-        audio.play();
-    });
-
-    audio.addEventListener('ended', () => {
+        loadingIcon.classList.add('hidden');
+        button.disabled = false;
+    };
+    audioPlayer.onerror = () => {
+        // Reset button state on error
+        playIcon.classList.remove('hidden');
+        loadingIcon.classList.add('hidden');
+        button.disabled = false;
+        alert('Audio file not found. Please check if audio files are available.');
+    };
+    audioPlayer.play().catch(error => {
+        console.error('Audio playback failed:', error);
+        // Reset button state
+        playIcon.classList.remove('hidden');
+        loadingIcon.classList.add('hidden');
         button.disabled = false;
     });
 }
 
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('audio-button')) {
-        handleAudioPlay(e.target);
+function createQuestionCard(q, index) {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    const isBookmarked = bookmarkedQuestions.includes(q.id);
+    const isCompleted = completedQuestions.includes(q.id);
+
+    card.innerHTML = `
+        <div class="card-header">
+            <span class="question-number">#${q.id}</span>
+            <span class="section-tag">${translations[currentLanguage][q.section] || q.section}</span>
+        </div>
+        <div class="question" lang="${currentLanguage}">
+            ${currentLanguage === 'en' ? q.questionEN : q.questionPS}
+        </div>
+        <div class="answer" lang="${currentLanguage}">
+            ${currentLanguage === 'en' ? q.answerEN : q.answerPS}
+        </div>
+        <div class="card-footer">
+            <button class="audio-button" onclick="handleAudioPlay('${currentLanguage === 'en' ? q.audioEN : q.audioPS}', this)">
+                <span class="play-icon">▶</span>
+                <span class="loading-icon hidden">⌛</span>
+            </button>
+            <button class="bookmark-btn ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleBookmark(${q.id})">
+                <span class="bookmark-icon">${isBookmarked ? '🔖' : '📑'}</span>
+            </button>
+            <button class="complete-btn ${isCompleted ? 'completed' : ''}" onclick="toggleComplete(${q.id})">
+                <span class="complete-icon">${isCompleted ? '✅' : '⭕'}</span>
+            </button>
+        </div>
+    `;
+    return card;
+}
+
+function renderQuestions() {
+    const content = document.getElementById('lessonContent');
+    content.innerHTML = '';
+    
+    const sectionHeader = document.createElement('div');
+    sectionHeader.className = 'section-header';
+    sectionHeader.innerHTML = `
+        <h2>${translations[currentLanguage][currentSection]}</h2>
+        <div class="progress-bar">
+            <div class="progress" style="width: ${getProgress()}%"></div>
+        </div>
+    `;
+    
+    content.appendChild(createSectionNav());
+    content.appendChild(sectionHeader);
+    
+    const questionsGrid = document.createElement('div');
+    questionsGrid.className = 'questions-grid';
+    
+    const questions = citizenshipData.filter(q => q.section === currentSection);
+    questions.forEach((q, index) => {
+        questionsGrid.appendChild(createQuestionCard(q, index));
+    });
+    
+    content.appendChild(questionsGrid);
+}
+
+function getProgress() {
+    const sectionQuestions = citizenshipData.filter(q => q.section === currentSection);
+    const completedInSection = completedQuestions.filter(id =>
+        sectionQuestions.some(q => q.id === id)
+    );
+    return sectionQuestions.length > 0 ? (completedInSection.length / sectionQuestions.length) * 100 : 0;
+}
+
+// Add missing functions
+function toggleBookmark(questionId) {
+    const index = bookmarkedQuestions.indexOf(questionId);
+    if (index > -1) {
+        bookmarkedQuestions.splice(index, 1);
+    } else {
+        bookmarkedQuestions.push(questionId);
     }
-});
+    localStorage.setItem('bookmarkedQuestions', JSON.stringify(bookmarkedQuestions));
+    renderQuestions(); // Re-render to update UI
+}
 
-languageSelect.addEventListener('change', (e) => {
+function toggleComplete(questionId) {
+    const index = completedQuestions.indexOf(questionId);
+    if (index > -1) {
+        completedQuestions.splice(index, 1);
+    } else {
+        completedQuestions.push(questionId);
+    }
+    localStorage.setItem('completedQuestions', JSON.stringify(completedQuestions));
+    renderQuestions(); // Re-render to update UI
+    updateMainProgress(); // Update main app progress
+}
+
+function updateMainProgress() {
+    // Update the main app's progress tracking
+    const progress = {
+        questionsStudied: completedQuestions.length,
+        quizScore: localStorage.getItem('quizScore') || 0
+    };
+    localStorage.setItem('citizenshipProgress', JSON.stringify(progress));
+}
+
+// Make functions globally accessible
+window.changeSection = function(section) {
+    currentSection = section;
+    renderQuestions();
+};
+
+window.handleAudioPlay = handleAudioPlay;
+window.toggleBookmark = toggleBookmark;
+window.toggleComplete = toggleComplete;
+
+function updatePageLanguage() {
+    // Update page title
+    const lessonsTitle = document.getElementById('lessonsTitle');
+    if (lessonsTitle) {
+        lessonsTitle.textContent = translations[currentLanguage]['Lessons'];
+    }
+
+    // Update document direction for RTL languages
+    if (currentLanguage === 'ps') {
+        document.documentElement.setAttribute('dir', 'rtl');
+        document.documentElement.setAttribute('lang', 'ps');
+    } else {
+        document.documentElement.setAttribute('dir', 'ltr');
+        document.documentElement.setAttribute('lang', 'en');
+    }
+}
+
+document.getElementById('languageSelect').addEventListener('change', (e) => {
     currentLanguage = e.target.value;
-    AudioPlayer.stop();
-    renderLessons();
+    localStorage.setItem('selectedLanguage', currentLanguage);
+    updatePageLanguage();
+    renderQuestions();
 });
 
-renderLessons();
+// Initialize the app
+function initializeLessons() {
+    // Set language selector to saved preference
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) {
+        languageSelect.value = currentLanguage;
+    }
+
+    updatePageLanguage();
+    renderQuestions();
+}
+
+initializeLessons();
