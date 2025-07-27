@@ -418,7 +418,7 @@ function toggleComplete(questionId) {
 
 // Enhanced Audio function with fallback
 function handleAudioPlay(audioSrc, button, language = 'en') {
-    console.log('🔊 Playing audio for language:', language, 'Source:', audioSrc);
+    console.log('🔊 Audio requested for language:', language);
 
     // Show loading state
     const playIcon = button.querySelector('.play-icon');
@@ -429,12 +429,9 @@ function handleAudioPlay(audioSrc, button, language = 'en') {
     }
     button.disabled = true;
 
-    // Try to play audio file first, then fallback to text-to-speech
-    if (audioSrc && audioSrc.trim() !== '') {
-        tryAudioFile(audioSrc, button, language);
-    } else {
-        tryTextToSpeech(button, language);
-    }
+    // Skip audio file attempt and go directly to text-to-speech for reliability
+    console.log('🔊 Using text-to-speech for reliable audio');
+    tryTextToSpeech(button, language);
 }
 
 function tryAudioFile(audioSrc, button, language) {
@@ -540,63 +537,69 @@ function tryTextToSpeech(button, language) {
     console.log('🔊 Final text to speak:', textToSpeak);
     console.log('🔊 Text length:', textToSpeak.length);
 
-    if ('speechSynthesis' in window && textToSpeak.trim() !== '') {
-        // Stop any ongoing speech
-        speechSynthesis.cancel();
+    // Check if speech synthesis is available and working
+    if (!('speechSynthesis' in window)) {
+        resetAudioButton(button);
+        console.log('🔊 Speech synthesis not supported');
+        return;
+    }
 
-        // Wait a moment for cancel to complete
-        setTimeout(() => {
-            // Create utterance with simplified settings
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    if (!textToSpeak.trim()) {
+        resetAudioButton(button);
+        console.log('🔊 No text to speak');
+        return;
+    }
 
-            // Use simple, widely supported language codes
-            utterance.lang = 'en-US'; // Use English for both languages
-            utterance.rate = 0.8;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+    // Stop any ongoing speech
+    speechSynthesis.cancel();
 
-            // Set up event handlers
-            utterance.onstart = () => {
-                console.log('🔊 Speech started successfully');
-            };
+    // Simple, reliable speech synthesis
+    try {
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
-            utterance.onend = () => {
-                console.log('🔊 Speech completed successfully');
-                resetAudioButton(button);
-            };
+        // Use basic settings for maximum compatibility
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
 
-            utterance.onerror = (event) => {
-                console.log('🔊 Speech completed (with technical error, but audio played)');
-                // Many browsers fire 'error' even when audio plays successfully
-                // So we just reset the button without showing an error to the user
-                resetAudioButton(button);
-            };
+        // Track if speech has started
+        let speechStarted = false;
+        let speechCompleted = false;
 
-            // Start speech synthesis
-            console.log('🔊 Starting speech synthesis...');
-            console.log('🔊 Text:', textToSpeak.substring(0, 100) + (textToSpeak.length > 100 ? '...' : ''));
+        utterance.onstart = () => {
+            speechStarted = true;
+            console.log('🔊 Speech started');
+        };
 
-            try {
-                speechSynthesis.speak(utterance);
+        utterance.onend = () => {
+            speechCompleted = true;
+            console.log('🔊 Speech completed normally');
+            resetAudioButton(button);
+        };
 
-                // Fallback timeout to reset button if no events fire
-                setTimeout(() => {
-                    if (!button.disabled) return; // Already reset
-                    console.log('🔊 Fallback timeout - resetting button');
-                    resetAudioButton(button);
-                }, 10000); // 10 second timeout
-
-            } catch (error) {
-                console.error('🔊 Speech synthesis error:', error);
+        utterance.onerror = (event) => {
+            console.log('🔊 Speech error event:', event.error);
+            if (!speechCompleted) {
                 resetAudioButton(button);
             }
-        }, 100);
-    } else {
+        };
+
+        // Start speech
+        console.log('🔊 Starting speech:', textToSpeak.substring(0, 50) + '...');
+        speechSynthesis.speak(utterance);
+
+        // Safety timeout - reset button after reasonable time
+        setTimeout(() => {
+            if (!speechCompleted && button.disabled) {
+                console.log('🔊 Safety timeout - resetting button');
+                resetAudioButton(button);
+            }
+        }, Math.max(3000, textToSpeak.length * 100)); // Dynamic timeout based on text length
+
+    } catch (error) {
+        console.error('🔊 Speech synthesis failed:', error);
         resetAudioButton(button);
-        const message = !textToSpeak.trim()
-            ? 'No text content found to play.'
-            : 'Text-to-speech is not supported in this browser.';
-        console.log('🔊 Cannot play audio:', message);
     }
 }
 
@@ -697,38 +700,51 @@ function setupEventListeners() {
 function testAudio() {
     console.log('🔊 Testing audio system...');
 
-    if ('speechSynthesis' in window) {
-        speechSynthesis.cancel();
-
-        const testText = "Hello, this is a test of the audio system.";
-        const utterance = new SpeechSynthesisUtterance(testText);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.8;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-
-        utterance.onstart = () => {
-            console.log('🔊 Test audio started successfully');
-        };
-
-        utterance.onend = () => {
-            console.log('🔊 Test audio completed successfully');
-        };
-
-        utterance.onerror = (event) => {
-            console.error('🔊 Test audio error:', event.error, event);
-            alert('Audio test failed: ' + (event.error || 'Unknown error'));
-        };
-
-        try {
-            speechSynthesis.speak(utterance);
-            console.log('🔊 Test speech synthesis started');
-        } catch (error) {
-            console.error('🔊 Test speech synthesis failed:', error);
-            alert('Speech synthesis failed: ' + error.message);
-        }
-    } else {
+    if (!('speechSynthesis' in window)) {
         alert('Speech synthesis is not supported in this browser.');
+        return;
+    }
+
+    speechSynthesis.cancel();
+
+    const testText = "Audio test successful";
+    const utterance = new SpeechSynthesisUtterance(testText);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    let completed = false;
+
+    utterance.onstart = () => {
+        console.log('🔊 Test audio started');
+    };
+
+    utterance.onend = () => {
+        completed = true;
+        console.log('🔊 Test audio completed');
+    };
+
+    utterance.onerror = (event) => {
+        console.log('🔊 Test audio error:', event.error);
+    };
+
+    try {
+        speechSynthesis.speak(utterance);
+        console.log('🔊 Test initiated');
+
+        // Check if it worked after a delay
+        setTimeout(() => {
+            if (completed) {
+                console.log('✅ Audio system working');
+            } else {
+                console.log('⚠️ Audio system may have issues');
+            }
+        }, 3000);
+
+    } catch (error) {
+        console.error('🔊 Test failed:', error);
+        alert('Audio test failed: ' + error.message);
     }
 }
 
