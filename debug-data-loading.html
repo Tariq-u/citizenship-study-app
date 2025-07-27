@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Data Loading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .debug-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .debug-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        .success {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .question-sample {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .section-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .section-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .section-count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Debug: Data Loading Analysis</h1>
+        <div id="debugResults">Loading...</div>
+    </div>
+
+    <script type="module">
+        async function debugDataLoading() {
+            const results = document.getElementById('debugResults');
+            let output = '';
+            
+            try {
+                // Test 1: Import the data
+                console.log('Importing citizenship data...');
+                const { citizenshipData } = await import('./src/data/citizenshipData.js');
+                
+                output += `<div class="debug-info success">
+                    <strong>✅ Data Import Successful</strong><br>
+                    Total questions loaded: <strong>${citizenshipData.length}</strong>
+                </div>`;
+                
+                // Test 2: Check data structure
+                const firstQuestion = citizenshipData[0];
+                const lastQuestion = citizenshipData[citizenshipData.length - 1];
+                
+                output += `<div class="debug-info">
+                    <strong>📊 Data Structure Analysis</strong><br>
+                    First question ID: ${firstQuestion.id}<br>
+                    Last question ID: ${lastQuestion.id}<br>
+                    Expected range: 1 to ${citizenshipData.length}
+                </div>`;
+                
+                // Test 3: Check for missing questions
+                const questionIds = citizenshipData.map(q => q.id).sort((a, b) => a - b);
+                const expectedIds = Array.from({length: citizenshipData.length}, (_, i) => i + 1);
+                const missingIds = expectedIds.filter(id => !questionIds.includes(id));
+                const duplicateIds = questionIds.filter((id, index) => questionIds.indexOf(id) !== index);
+                
+                if (missingIds.length === 0 && duplicateIds.length === 0) {
+                    output += `<div class="debug-info success">
+                        <strong>✅ Question IDs Valid</strong><br>
+                        All question IDs from 1 to ${citizenshipData.length} are present and unique.
+                    </div>`;
+                } else {
+                    output += `<div class="debug-info error">
+                        <strong>❌ Question ID Issues</strong><br>
+                        Missing IDs: ${missingIds.join(', ') || 'None'}<br>
+                        Duplicate IDs: ${duplicateIds.join(', ') || 'None'}
+                    </div>`;
+                }
+                
+                // Test 4: Check sections
+                const sections = [...new Set(citizenshipData.map(q => q.section))];
+                const sectionCounts = {};
+                sections.forEach(section => {
+                    sectionCounts[section] = citizenshipData.filter(q => q.section === section).length;
+                });
+                
+                output += `<div class="debug-info">
+                    <strong>📚 Section Breakdown</strong><br>
+                    <div class="section-breakdown">
+                        ${sections.map(section => `
+                            <div class="section-card">
+                                <div class="section-count">${sectionCounts[section]}</div>
+                                <div>${section}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+                
+                // Test 5: Check translations
+                const questionsWithPashto = citizenshipData.filter(q => q.questionPS && q.questionPS.trim() !== '');
+                const answersWithPashto = citizenshipData.filter(q => q.answerPS && q.answerPS.trim() !== '');
+                
+                output += `<div class="debug-info ${questionsWithPashto.length === citizenshipData.length ? 'success' : 'error'}">
+                    <strong>🌍 Translation Status</strong><br>
+                    Questions with Pashto: ${questionsWithPashto.length}/${citizenshipData.length}<br>
+                    Answers with Pashto: ${answersWithPashto.length}/${citizenshipData.length}
+                </div>`;
+                
+                // Test 6: Sample questions from different ranges
+                const sampleQuestions = [
+                    citizenshipData[0], // First
+                    citizenshipData[Math.floor(citizenshipData.length / 4)], // Quarter
+                    citizenshipData[Math.floor(citizenshipData.length / 2)], // Middle
+                    citizenshipData[Math.floor(3 * citizenshipData.length / 4)], // Three quarters
+                    citizenshipData[citizenshipData.length - 1] // Last
+                ];
+                
+                output += `<div class="debug-info">
+                    <strong>📝 Sample Questions</strong><br>
+                    ${sampleQuestions.map(q => `
+                        <div class="question-sample">
+                            <strong>Q${q.id} (${q.section}):</strong><br>
+                            EN: ${q.questionEN.substring(0, 80)}${q.questionEN.length > 80 ? '...' : ''}<br>
+                            PS: ${q.questionPS.substring(0, 80)}${q.questionPS.length > 80 ? '...' : ''}
+                        </div>
+                    `).join('')}
+                </div>`;
+                
+                // Test 7: Test filtering logic
+                const americanGovQuestions = citizenshipData.filter(q => q.section === 'American Government');
+                const americanHistoryQuestions = citizenshipData.filter(q => q.section === 'American History');
+                const integratedCivicsQuestions = citizenshipData.filter(q => q.section === 'Integrated Civics');
+                
+                output += `<div class="debug-info">
+                    <strong>🔍 Filter Test Results</strong><br>
+                    American Government: ${americanGovQuestions.length} questions<br>
+                    American History: ${americanHistoryQuestions.length} questions<br>
+                    Integrated Civics: ${integratedCivicsQuestions.length} questions<br>
+                    Total: ${americanGovQuestions.length + americanHistoryQuestions.length + integratedCivicsQuestions.length}
+                </div>`;
+                
+                // Test 8: Simulate the lessons.js filtering
+                console.log('Testing lessons.js filtering logic...');
+                let filtered = [...citizenshipData];
+                
+                output += `<div class="debug-info success">
+                    <strong>🎯 Lessons.js Simulation</strong><br>
+                    Starting with: ${filtered.length} questions<br>
+                    After filtering (no filters applied): ${filtered.length} questions<br>
+                    <strong>This should show all ${citizenshipData.length} questions on the lessons page!</strong>
+                </div>`;
+                
+                // Test 9: Check for any potential issues
+                const potentialIssues = [];
+                
+                if (citizenshipData.length < 100) {
+                    potentialIssues.push(`Only ${citizenshipData.length} questions found, expected 100+`);
+                }
+                
+                if (questionsWithPashto.length < citizenshipData.length) {
+                    potentialIssues.push(`${citizenshipData.length - questionsWithPashto.length} questions missing Pashto translations`);
+                }
+                
+                if (potentialIssues.length > 0) {
+                    output += `<div class="debug-info error">
+                        <strong>⚠️ Potential Issues</strong><br>
+                        ${potentialIssues.map(issue => `• ${issue}`).join('<br>')}
+                    </div>`;
+                } else {
+                    output += `<div class="debug-info success">
+                        <strong>✅ No Issues Detected</strong><br>
+                        Data appears to be complete and properly structured.
+                    </div>`;
+                }
+                
+            } catch (error) {
+                output += `<div class="debug-info error">
+                    <strong>❌ Error Loading Data</strong><br>
+                    ${error.message}<br>
+                    Stack: ${error.stack}
+                </div>`;
+                console.error('Debug error:', error);
+            }
+            
+            results.innerHTML = output;
+        }
+        
+        // Run the debug
+        debugDataLoading();
+    </script>
+</body>
+</html>

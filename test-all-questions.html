@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test All Questions - Debug</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/css/style.css">
+    <link rel="stylesheet" href="src/css/lessons.css">
+    <style>
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        .debug-panel h4 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        .debug-item {
+            margin: 5px 0;
+        }
+        .question-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2196F3;
+            color: white;
+            padding: 15px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 1000;
+            min-width: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h4>🔍 Debug Info</h4>
+        <div class="debug-item">Total Questions: <span id="totalCount">Loading...</span></div>
+        <div class="debug-item">Displayed: <span id="displayedCount">0</span></div>
+        <div class="debug-item">Filtered: <span id="filteredCount">0</span></div>
+        <div class="debug-item">Status: <span id="status">Initializing...</span></div>
+    </div>
+    
+    <div class="question-counter" id="questionCounter">0</div>
+    
+    <header>
+        <a href="index.html" class="back-button">←</a>
+        <h1 id="lessonsTitle">🔍 Debug: All Questions Test</h1>
+        <p class="subtitle">Testing complete question display - English & Pashto</p>
+    </header>
+    
+    <main id="lessonContent">
+        <div class="loading-message" style="text-align: center; padding: 2rem; color: white;">
+            <h2>Loading and analyzing questions...</h2>
+            <p>Debug mode: Checking all 100+ questions</p>
+        </div>
+    </main>
+    
+    <script type="module">
+        // Import the data and lessons functionality
+        import { citizenshipData } from './src/data/citizenshipData.js';
+        
+        // Debug elements
+        const totalCountEl = document.getElementById('totalCount');
+        const displayedCountEl = document.getElementById('displayedCount');
+        const filteredCountEl = document.getElementById('filteredCount');
+        const statusEl = document.getElementById('status');
+        const questionCounterEl = document.getElementById('questionCounter');
+        
+        // Update debug info
+        function updateDebugInfo() {
+            totalCountEl.textContent = citizenshipData.length;
+            const displayedCards = document.querySelectorAll('.question-card').length;
+            displayedCountEl.textContent = displayedCards;
+            questionCounterEl.textContent = displayedCards;
+        }
+        
+        // Initialize debug test
+        async function initDebugTest() {
+            console.log('🚀 Starting debug test...');
+            statusEl.textContent = 'Loading data...';
+            
+            // Update initial counts
+            updateDebugInfo();
+            
+            // Test 1: Verify data loading
+            console.log('📊 Total questions in data:', citizenshipData.length);
+            console.log('📊 First question:', citizenshipData[0]);
+            console.log('📊 Last question:', citizenshipData[citizenshipData.length - 1]);
+            
+            statusEl.textContent = 'Creating interface...';
+            
+            // Test 2: Create a simple interface without complex filtering
+            const content = document.getElementById('lessonContent');
+            content.innerHTML = '';
+            
+            // Create simple control panel
+            const controlPanel = document.createElement('div');
+            controlPanel.className = 'control-panel';
+            controlPanel.innerHTML = `
+                <div class="search-section">
+                    <h3>🔍 Debug Test: Displaying All ${citizenshipData.length} Questions</h3>
+                    <p>This test bypasses complex filtering to show all questions directly.</p>
+                </div>
+            `;
+            content.appendChild(controlPanel);
+            
+            // Test 3: Create questions grid with ALL questions
+            statusEl.textContent = 'Rendering questions...';
+            
+            const questionsGrid = document.createElement('div');
+            questionsGrid.className = 'questions-grid';
+            questionsGrid.id = 'questionsGrid';
+            
+            console.log('📝 Creating cards for all', citizenshipData.length, 'questions...');
+            
+            // Render ALL questions directly
+            citizenshipData.forEach((q, index) => {
+                const card = createSimpleQuestionCard(q, index);
+                questionsGrid.appendChild(card);
+                
+                // Log progress every 10 questions
+                if ((index + 1) % 10 === 0 || index === citizenshipData.length - 1) {
+                    console.log(`📝 Created ${index + 1}/${citizenshipData.length} question cards`);
+                    statusEl.textContent = `Rendering... ${index + 1}/${citizenshipData.length}`;
+                    updateDebugInfo();
+                }
+            });
+            
+            content.appendChild(questionsGrid);
+            
+            statusEl.textContent = 'Complete!';
+            updateDebugInfo();
+            
+            console.log('✅ Debug test complete!');
+            console.log('📊 Final card count:', document.querySelectorAll('.question-card').length);
+            
+            // Test 4: Verify all questions are unique
+            const displayedIds = Array.from(document.querySelectorAll('.question-card')).map(card => 
+                parseInt(card.dataset.questionId)
+            );
+            const uniqueIds = [...new Set(displayedIds)];
+            
+            console.log('🔍 Displayed question IDs:', displayedIds.length);
+            console.log('🔍 Unique question IDs:', uniqueIds.length);
+            console.log('🔍 ID range:', Math.min(...displayedIds), 'to', Math.max(...displayedIds));
+            
+            if (displayedIds.length === uniqueIds.length && displayedIds.length === citizenshipData.length) {
+                console.log('✅ SUCCESS: All questions displayed correctly!');
+                statusEl.textContent = '✅ All questions displayed!';
+                statusEl.style.color = '#4CAF50';
+            } else {
+                console.log('❌ ISSUE: Question count mismatch');
+                statusEl.textContent = '❌ Issue detected';
+                statusEl.style.color = '#f44336';
+            }
+        }
+        
+        // Simple question card creation (bypassing complex logic)
+        function createSimpleQuestionCard(q, index) {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.dataset.questionId = q.id;
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="question-number">#${q.id}</span>
+                    <span class="section-tag">${q.section}</span>
+                </div>
+                <div class="question-section">
+                    <div class="question-english">
+                        <span class="language-label">🇺🇸 English:</span>
+                        ${q.questionEN || 'Question not available'}
+                    </div>
+                    <div class="question-pashto" lang="ps" dir="rtl">
+                        <span class="language-label">🇦🇫 پښتو:</span>
+                        ${q.questionPS || 'پوښتنه شتون نلري'}
+                    </div>
+                </div>
+                <div class="answer-section">
+                    <div class="answer-english">
+                        <span class="language-label">✅ Answer:</span>
+                        ${q.answerEN || 'Answer not available'}
+                    </div>
+                    <div class="answer-pashto" lang="ps" dir="rtl">
+                        <span class="language-label">✅ ځواب:</span>
+                        ${q.answerPS || 'ځواب شتون نلري'}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span style="color: #666; font-size: 0.9em;">Question ${index + 1} of ${citizenshipData.length}</span>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Start the test when DOM is ready
+        document.addEventListener('DOMContentLoaded', initDebugTest);
+        
+        // Update counter on scroll
+        let lastUpdate = 0;
+        window.addEventListener('scroll', () => {
+            const now = Date.now();
+            if (now - lastUpdate > 100) { // Throttle updates
+                updateDebugInfo();
+                lastUpdate = now;
+            }
+        });
+    </script>
+</body>
+</html>

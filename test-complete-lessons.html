@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Lessons Test - All 100 Questions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/css/style.css">
+    <link rel="stylesheet" href="src/css/lessons.css">
+    <style>
+        .test-banner {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            min-width: 300px;
+        }
+        .test-banner h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+        .test-banner .count {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        body {
+            padding-top: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-banner">
+        <h3>✅ COMPLETE TEST: All <span class="count" id="questionCount">100</span> Questions</h3>
+        <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+            Displaying: <span id="displayedCount">Loading...</span> | 
+            Sections: <span id="sectionCount">3</span>
+        </div>
+    </div>
+    
+    <header>
+        <a href="index.html" class="back-button">←</a>
+        <h1 id="lessonsTitle">🇺🇸 Complete Test: All 100 Questions</h1>
+        <p class="subtitle">Full USCIS Question Set - English & Pashto (انګلیسي او پښتو)</p>
+    </header>
+    
+    <main id="lessonContent">
+        <div class="loading-message" style="text-align: center; padding: 2rem; color: white;">
+            <h2>Loading all 100 questions...</h2>
+            <p>Please wait while we load the complete USCIS citizenship test question set.</p>
+        </div>
+    </main>
+    
+    <script type="module" src="src/js/lessons-complete.js"></script>
+    
+    <script>
+        // Update the test banner with actual counts
+        function updateTestBanner() {
+            const displayedCards = document.querySelectorAll('.question-card').length;
+            const displayedCountEl = document.getElementById('displayedCount');
+            if (displayedCountEl) {
+                displayedCountEl.textContent = displayedCards;
+            }
+            
+            // Update banner color based on success
+            const banner = document.querySelector('.test-banner');
+            if (displayedCards >= 100) {
+                banner.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                banner.querySelector('h3').innerHTML = `✅ SUCCESS: All <span class="count">${displayedCards}</span> Questions Loaded!`;
+            } else if (displayedCards > 0) {
+                banner.style.background = 'linear-gradient(135deg, #FF9800, #F57C00)';
+                banner.querySelector('h3').innerHTML = `⚠️ PARTIAL: Only <span class="count">${displayedCards}</span> Questions Loaded`;
+            } else {
+                banner.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+                banner.querySelector('h3').innerHTML = `❌ ERROR: <span class="count">0</span> Questions Loaded`;
+            }
+        }
+        
+        // Check every 2 seconds for updates
+        setInterval(updateTestBanner, 2000);
+        
+        // Initial check after 3 seconds
+        setTimeout(updateTestBanner, 3000);
+        
+        // Log to console for debugging
+        setTimeout(() => {
+            console.log('🔍 Final Test Results:');
+            console.log('📊 Question cards found:', document.querySelectorAll('.question-card').length);
+            console.log('📊 Questions grid found:', document.querySelectorAll('.questions-grid').length);
+            console.log('📊 Control panel found:', document.querySelectorAll('.control-panel').length);
+            
+            // Check for specific question IDs
+            const questionIds = Array.from(document.querySelectorAll('.question-card')).map(card => 
+                parseInt(card.dataset.questionId)
+            ).sort((a, b) => a - b);
+            
+            console.log('📊 Question ID range:', questionIds.length > 0 ? `${questionIds[0]} to ${questionIds[questionIds.length - 1]}` : 'None');
+            console.log('📊 Missing questions:', questionIds.length < 100 ? 'YES' : 'NO');
+            
+            if (questionIds.length >= 100) {
+                console.log('✅ SUCCESS: All questions appear to be loaded correctly!');
+            } else {
+                console.log('❌ ISSUE: Only', questionIds.length, 'questions loaded out of expected 100');
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
