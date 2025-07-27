@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify All 100 Questions Are Loading</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #059669, #10b981);
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+        }
+        .stat-card.error {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .verification-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: white;
+        }
+        .result-item.success {
+            border-left: 4px solid #059669;
+        }
+        .result-item.error {
+            border-left: 4px solid #dc2626;
+            background: #fef2f2;
+        }
+        .btn {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+        .question-sample {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .pashto-text {
+            font-family: 'Noto Naskh Arabic', serif;
+            direction: rtl;
+            text-align: right;
+            color: #059669;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Verify All 100 USCIS Questions</h1>
+            <p>Comprehensive verification that all 100 official questions are loaded and displaying correctly</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card" id="totalCard">
+                <span class="stat-number" id="totalQuestions">0</span>
+                <span class="stat-label">Total Questions Loaded</span>
+            </div>
+            <div class="stat-card" id="englishCard">
+                <span class="stat-number" id="englishQuestions">0</span>
+                <span class="stat-label">English Questions</span>
+            </div>
+            <div class="stat-card" id="pashtoCard">
+                <span class="stat-number" id="pashtoQuestions">0</span>
+                <span class="stat-label">Pashto Translations</span>
+            </div>
+            <div class="stat-card" id="sectionsCard">
+                <span class="stat-number" id="totalSections">0</span>
+                <span class="stat-label">Question Sections</span>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="btn" onclick="runVerification()">🚀 Run Complete Verification</button>
+            <button class="btn" onclick="showSampleQuestions()">📋 Show Sample Questions</button>
+            <button class="btn" onclick="exportResults()">💾 Export Results</button>
+        </div>
+        
+        <div class="verification-results" id="results">
+            <h3>📊 Verification Results</h3>
+            <p>Click "Run Complete Verification" to start the analysis...</p>
+        </div>
+        
+        <div id="sampleQuestions" style="display: none;">
+            <h3>📋 Sample Questions (First 5 and Last 5)</h3>
+            <div id="questionSamples"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { citizenshipData } from './src/data/citizenshipData.js';
+        
+        let verificationResults = {
+            total: 0,
+            english: 0,
+            pashto: 0,
+            sections: new Set(),
+            missingIds: [],
+            duplicateIds: [],
+            issues: []
+        };
+        
+        function updateStats() {
+            const totalCard = document.getElementById('totalCard');
+            const englishCard = document.getElementById('englishCard');
+            const pashtoCard = document.getElementById('pashtoCard');
+            const sectionsCard = document.getElementById('sectionsCard');
+            
+            document.getElementById('totalQuestions').textContent = verificationResults.total;
+            document.getElementById('englishQuestions').textContent = verificationResults.english;
+            document.getElementById('pashtoQuestions').textContent = verificationResults.pashto;
+            document.getElementById('totalSections').textContent = verificationResults.sections.size;
+            
+            // Update card colors based on results
+            if (verificationResults.total === 100) {
+                totalCard.className = 'stat-card success';
+            } else if (verificationResults.total > 50) {
+                totalCard.className = 'stat-card warning';
+            } else {
+                totalCard.className = 'stat-card error';
+            }
+            
+            if (verificationResults.english === verificationResults.total) {
+                englishCard.className = 'stat-card success';
+            } else {
+                englishCard.className = 'stat-card warning';
+            }
+            
+            if (verificationResults.pashto === verificationResults.total) {
+                pashtoCard.className = 'stat-card success';
+            } else {
+                pashtoCard.className = 'stat-card warning';
+            }
+            
+            if (verificationResults.sections.size >= 3) {
+                sectionsCard.className = 'stat-card success';
+            } else {
+                sectionsCard.className = 'stat-card warning';
+            }
+        }
+        
+        function runVerification() {
+            console.log('🔍 Starting comprehensive verification...');
+            console.log('Raw data:', citizenshipData);
+            
+            // Reset results
+            verificationResults = {
+                total: 0,
+                english: 0,
+                pashto: 0,
+                sections: new Set(),
+                missingIds: [],
+                duplicateIds: [],
+                issues: []
+            };
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>📊 Verification Results</h3>';
+            
+            // Check if data loaded
+            if (!citizenshipData || !Array.isArray(citizenshipData)) {
+                addResult('❌ ERROR: citizenshipData not loaded or not an array', 'error');
+                return;
+            }
+            
+            verificationResults.total = citizenshipData.length;
+            addResult(`✅ Loaded ${verificationResults.total} questions from data file`, 'success');
+            
+            // Check for expected 100 questions
+            if (verificationResults.total !== 100) {
+                addResult(`⚠️ WARNING: Expected 100 questions, found ${verificationResults.total}`, 'error');
+            } else {
+                addResult('✅ SUCCESS: All 100 questions present', 'success');
+            }
+            
+            // Verify each question
+            const seenIds = new Set();
+            const expectedIds = Array.from({length: 100}, (_, i) => i + 1);
+            
+            citizenshipData.forEach((question, index) => {
+                // Check ID
+                if (!question.id) {
+                    verificationResults.issues.push(`Question ${index + 1}: Missing ID`);
+                } else if (seenIds.has(question.id)) {
+                    verificationResults.duplicateIds.push(question.id);
+                } else {
+                    seenIds.add(question.id);
+                }
+                
+                // Check English content
+                if (question.questionEN && question.answerEN) {
+                    verificationResults.english++;
+                } else {
+                    verificationResults.issues.push(`Question ${question.id}: Missing English content`);
+                }
+                
+                // Check Pashto content
+                if (question.questionPS && question.answerPS) {
+                    verificationResults.pashto++;
+                } else {
+                    verificationResults.issues.push(`Question ${question.id}: Missing Pashto content`);
+                }
+                
+                // Check section
+                if (question.section) {
+                    verificationResults.sections.add(question.section);
+                }
+            });
+            
+            // Check for missing IDs
+            expectedIds.forEach(id => {
+                if (!seenIds.has(id)) {
+                    verificationResults.missingIds.push(id);
+                }
+            });
+            
+            // Report results
+            addResult(`✅ English Questions: ${verificationResults.english}/100`, 
+                verificationResults.english === 100 ? 'success' : 'error');
+            
+            addResult(`✅ Pashto Translations: ${verificationResults.pashto}/100`, 
+                verificationResults.pashto === 100 ? 'success' : 'error');
+            
+            addResult(`✅ Question Sections: ${verificationResults.sections.size} (${Array.from(verificationResults.sections).join(', ')})`, 'success');
+            
+            if (verificationResults.missingIds.length > 0) {
+                addResult(`❌ Missing Question IDs: ${verificationResults.missingIds.join(', ')}`, 'error');
+            }
+            
+            if (verificationResults.duplicateIds.length > 0) {
+                addResult(`❌ Duplicate Question IDs: ${verificationResults.duplicateIds.join(', ')}`, 'error');
+            }
+            
+            if (verificationResults.issues.length > 0) {
+                addResult(`⚠️ Issues Found: ${verificationResults.issues.length}`, 'error');
+                verificationResults.issues.forEach(issue => {
+                    addResult(`  • ${issue}`, 'error');
+                });
+            }
+            
+            if (verificationResults.total === 100 && verificationResults.english === 100 && 
+                verificationResults.pashto === 100 && verificationResults.issues.length === 0) {
+                addResult('🎉 PERFECT: All 100 questions verified successfully!', 'success');
+            }
+            
+            updateStats();
+        }
+        
+        function addResult(message, type = 'success') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result-item ${type}`;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function showSampleQuestions() {
+            const sampleDiv = document.getElementById('sampleQuestions');
+            const samplesDiv = document.getElementById('questionSamples');
+            
+            if (!citizenshipData || citizenshipData.length === 0) {
+                samplesDiv.innerHTML = '<p>No questions loaded. Run verification first.</p>';
+                return;
+            }
+            
+            samplesDiv.innerHTML = '';
+            
+            // First 5 questions
+            const firstFive = citizenshipData.slice(0, 5);
+            const lastFive = citizenshipData.slice(-5);
+            
+            samplesDiv.innerHTML += '<h4>📝 First 5 Questions:</h4>';
+            firstFive.forEach(q => {
+                samplesDiv.innerHTML += `
+                    <div class="question-sample">
+                        <strong>Q${q.id}: ${q.questionEN}</strong><br>
+                        <div class="pashto-text">${q.questionPS || 'Missing Pashto'}</div>
+                        <em>Answer: ${q.answerEN}</em><br>
+                        <div class="pashto-text">${q.answerPS || 'Missing Pashto'}</div>
+                    </div>
+                `;
+            });
+            
+            samplesDiv.innerHTML += '<h4>📝 Last 5 Questions:</h4>';
+            lastFive.forEach(q => {
+                samplesDiv.innerHTML += `
+                    <div class="question-sample">
+                        <strong>Q${q.id}: ${q.questionEN}</strong><br>
+                        <div class="pashto-text">${q.questionPS || 'Missing Pashto'}</div>
+                        <em>Answer: ${q.answerEN}</em><br>
+                        <div class="pashto-text">${q.answerPS || 'Missing Pashto'}</div>
+                    </div>
+                `;
+            });
+            
+            sampleDiv.style.display = 'block';
+        }
+        
+        function exportResults() {
+            const results = {
+                timestamp: new Date().toISOString(),
+                verification: verificationResults,
+                sampleQuestions: {
+                    first: citizenshipData.slice(0, 5),
+                    last: citizenshipData.slice(-5)
+                }
+            };
+            
+            console.log('📊 Complete Verification Results:', results);
+            addResult('📊 Results exported to browser console', 'success');
+        }
+        
+        // Make functions globally accessible
+        window.runVerification = runVerification;
+        window.showSampleQuestions = showSampleQuestions;
+        window.exportResults = exportResults;
+        
+        // Auto-run verification on load
+        setTimeout(runVerification, 1000);
+    </script>
+</body>
+</html>
